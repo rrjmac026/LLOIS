@@ -7,11 +7,24 @@
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="#1a3a6b" Padding="16,12">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="🖨️ Print / Export" Width="140"
-                        Background="White" FontWeight="SemiBold"
-                        Click="PrintBtn_Click"/>
+                <!-- Right: Export buttons -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="🖨️ Print" Width="80" Margin="0,0,6,0"
+                            Background="White" FontWeight="SemiBold"
+                            Click="PrintBtn_Click"/>
+                    <Button Content="📄 Export PDF" Width="110" Margin="0,0,6,0"
+                            Background="#e8f0fe" FontWeight="SemiBold"
+                            Click="ExportPdfBtn_Click"/>
+                    <Button Content="📊 Export Excel" Width="120" Margin="0,0,6,0"
+                            Background="#e8f5e9" FontWeight="SemiBold"
+                            Click="ExportExcelBtn_Click"/>
+                    <Button Content="📝 Export Word" Width="120"
+                            Background="#fff3e0" FontWeight="SemiBold"
+                            Click="ExportWordBtn_Click"/>
+                </StackPanel>
+
                 <TextBlock Text="📊 Reports" Foreground="White"
-                           FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                        FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
             </DockPanel>
         </Border>
 

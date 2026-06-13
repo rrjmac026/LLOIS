@@ -7,6 +7,8 @@ public partial class App : Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
+        PdfFontResolver.Apply();
+        
         base.OnStartup(e);
         ShutdownMode = ShutdownMode.OnExplicitShutdown; // prevent premature exit
 
