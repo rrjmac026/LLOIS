@@ -1,6 +1,7 @@
 ﻿<Window x:Class="LLOIS.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:LLOIS"
         Title="LLOIS - Local Legislative Ordinance Information System"
         Height="600" Width="950" MinHeight="500" MinWidth="750">
 
