@@ -125,10 +125,10 @@ public partial class MainWindow : Window
         var dlg = new AddEditOrdinanceWindow(_service, _selectedOrdinance) { Owner = this };
         if (dlg.ShowDialog() == true)
         {
-            _auth.LogAction(_currentUser, "EDIT", $"Edited ordinance {_selectedOrdinance.OrdinanceNumber}");
+            var savedNumber = _selectedOrdinance.OrdinanceNumber; // ← save BEFORE LoadOrdinances clears it
+            _auth.LogAction(_currentUser, "EDIT", $"Edited ordinance {savedNumber}");
             LoadOrdinances();
-            // Re-select and refresh detail
-            var updated = _service.GetDetails(_selectedOrdinance.OrdinanceNumber);
+            var updated = _service.GetDetails(savedNumber); // ← use saved number
             if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
@@ -139,10 +139,11 @@ public partial class MainWindow : Window
         var dlg = new AddAmendmentWindow(_service, _selectedOrdinance) { Owner = this };
         if (dlg.ShowDialog() == true)
         {
-            _auth.LogAction(_currentUser, "AMEND", $"Added amendment to {_selectedOrdinance.OrdinanceNumber}");
-            var updated = _service.GetDetails(_selectedOrdinance.OrdinanceNumber);
-            if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
+            var savedNumber = _selectedOrdinance.OrdinanceNumber; // ← save BEFORE LoadOrdinances clears it
+            _auth.LogAction(_currentUser, "AMEND", $"Added amendment to {savedNumber}");
             LoadOrdinances();
+            var updated = _service.GetDetails(savedNumber); // ← use saved number
+            if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
 
