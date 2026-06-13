@@ -30,6 +30,9 @@
                     <Button Content="📊 Reports" Style="{StaticResource ToolBtn}"
                             Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
                             Click="ReportsBtn_Click" ToolTip="Open reports window"/>
+                    <Button Content="🚪 Logout" Style="{StaticResource ToolBtn}"
+                            Background="#8b1a1a" Foreground="White" BorderBrush="#aa3333"
+                            Click="LogoutBtn_Click" ToolTip="Log out" Margin="10,0,0,0"/>
                     <TextBlock x:Name="UserLabel" Foreground="#AACCFF"
                                VerticalAlignment="Center" FontSize="12" Margin="8,0,0,0"/>
                 </StackPanel>

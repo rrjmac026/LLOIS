@@ -297,6 +297,29 @@ public partial class MainWindow : Window
         _auth.LogAction(_currentUser, "VIEW", $"Viewed ordinance {o.OrdinanceNumber}");
     }
 
+    private void LogoutBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "Are you sure you want to log out?",
+            "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        _auth.LogAction(_currentUser, "LOGOUT", $"{_currentUser.Username} logged out.");
+
+        // Open a new login window
+        var login = new LoginWindow();
+        if (login.ShowDialog() == true && login.LoggedInUser is not null)
+        {
+            // Logged in as someone else — open a new MainWindow
+            var main = new MainWindow(login.LoggedInUser, login.Db);
+            main.Show();
+        }
+
+        // Close this window either way
+        this.Close();
+    }
+
     private void ClearDetail()
     {
         DetailPanel.Visibility = Visibility.Collapsed;
