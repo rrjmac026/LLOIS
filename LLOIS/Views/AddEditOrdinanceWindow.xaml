@@ -9,9 +9,6 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,10,0,3"/>
         </Style>
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="6,4"/>
-        </Style>
         <Style TargetType="ComboBox">
             <Setter Property="Padding" Value="6,4"/>
         </Style>
@@ -63,21 +60,29 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Ordinance Number *" Style="{StaticResource Label}"/>
-                        <TextBox x:Name="OrdNumberBox" PlaceholderText="e.g. ORD-2024-001"/>
+                        <TextBox x:Name="OrdNumberBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. ORD-2024-001"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Series Number *" Style="{StaticResource Label}"/>
-                        <TextBox x:Name="SeriesBox" PlaceholderText="e.g. Series of 2024, No. 1"/>
+                        <TextBox x:Name="SeriesBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. Series of 2024, No. 1"/>
                     </StackPanel>
                 </Grid>
 
                 <TextBlock Text="Title *" Style="{StaticResource Label}"/>
-                <TextBox x:Name="TitleBox" PlaceholderText="Official title of the ordinance"/>
+                <TextBox x:Name="TitleBox"
+                         Style="{StaticResource PlaceholderTextBox}"
+                         Tag="Official title of the ordinance"/>
 
                 <TextBlock Text="Subject *" Style="{StaticResource Label}"/>
-                <TextBox x:Name="SubjectBox" Height="56" TextWrapping="Wrap"
-                         AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                         PlaceholderText="Full subject / long title of the ordinance"/>
+                <TextBox x:Name="SubjectBox" Height="56"
+                         Style="{StaticResource PlaceholderTextBox}"
+                         Tag="Full subject / long title of the ordinance"
+                         TextWrapping="Wrap" AcceptsReturn="True"
+                         VerticalScrollBarVisibility="Auto"/>
 
                 <Grid Margin="0,0,0,0">
                     <Grid.ColumnDefinitions>
@@ -121,11 +126,15 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Sponsor / Author *" Style="{StaticResource Label}"/>
-                        <TextBox x:Name="SponsorBox" PlaceholderText="e.g. Hon. Juan dela Cruz"/>
+                        <TextBox x:Name="SponsorBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. Hon. Juan dela Cruz"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Committee" Style="{StaticResource Label}"/>
-                        <TextBox x:Name="CommitteeBox" PlaceholderText="e.g. Committee on Environment"/>
+                        <TextBox x:Name="CommitteeBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. Committee on Environment"/>
                     </StackPanel>
                 </Grid>
 
@@ -169,11 +178,15 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Amends Ordinance No." Style="{StaticResource Label}"/>
-                        <TextBox x:Name="AmendsBox" PlaceholderText="e.g. ORD-2020-001"/>
+                        <TextBox x:Name="AmendsBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. ORD-2020-001"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Supersedes Ordinance No." Style="{StaticResource Label}"/>
-                        <TextBox x:Name="SupersedesBox" PlaceholderText="e.g. ORD-2015-010"/>
+                        <TextBox x:Name="SupersedesBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. ORD-2015-010"/>
                     </StackPanel>
                 </Grid>
 
@@ -185,11 +198,15 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Repealed By Ordinance No." Style="{StaticResource Label}"/>
-                        <TextBox x:Name="RepealedByBox" PlaceholderText="e.g. ORD-2023-002"/>
+                        <TextBox x:Name="RepealedByBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="e.g. ORD-2023-002"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Repeal Reason" Style="{StaticResource Label}"/>
-                        <TextBox x:Name="RepealReasonBox" PlaceholderText="Reason for repeal (if applicable)"/>
+                        <TextBox x:Name="RepealReasonBox"
+                                 Style="{StaticResource PlaceholderTextBox}"
+                                 Tag="Reason for repeal (if applicable)"/>
                     </StackPanel>
                 </Grid>
 
@@ -200,15 +217,21 @@
                 <Separator x:Name="VersionSeparator" Margin="0,0,0,4"/>
                 <StackPanel x:Name="VersionSection">
                     <TextBlock Text="Version Title *" Style="{StaticResource Label}"/>
-                    <TextBox x:Name="VersionTitleBox" PlaceholderText="Title for Version 1"/>
+                    <TextBox x:Name="VersionTitleBox"
+                             Style="{StaticResource PlaceholderTextBox}"
+                             Tag="Title for Version 1"/>
 
                     <TextBlock Text="Content / Summary *" Style="{StaticResource Label}"/>
-                    <TextBox x:Name="VersionContentBox" Height="80" TextWrapping="Wrap"
-                             AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                             PlaceholderText="Describe what this ordinance contains..."/>
+                    <TextBox x:Name="VersionContentBox" Height="80"
+                             Style="{StaticResource PlaceholderTextBox}"
+                             Tag="Describe what this ordinance contains..."
+                             TextWrapping="Wrap" AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"/>
 
                     <TextBlock Text="Enacted By" Style="{StaticResource Label}"/>
-                    <TextBox x:Name="EnactedByBox" PlaceholderText="e.g. Ordinance No. 2024-001"/>
+                    <TextBox x:Name="EnactedByBox"
+                             Style="{StaticResource PlaceholderTextBox}"
+                             Tag="e.g. Ordinance No. 2024-001"/>
 
                     <TextBlock Text="Date Enacted *" Style="{StaticResource Label}"/>
                     <DatePicker x:Name="VersionDatePicker"/>
@@ -223,7 +246,8 @@
                     <Button DockPanel.Dock="Right" Content="Browse..." Width="90"
                             Margin="8,0,0,0" Click="BrowsePdf_Click"/>
                     <TextBox x:Name="PdfPathBox" IsReadOnly="True"
-                             PlaceholderText="No PDF attached (optional)"
+                             Style="{StaticResource PlaceholderTextBox}"
+                             Tag="No PDF attached (optional)"
                              Background="#F8F8F8"/>
                 </DockPanel>
                 <TextBlock Text="Attach the original signed PDF of this ordinance."

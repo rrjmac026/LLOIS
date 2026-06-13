@@ -42,27 +42,31 @@
 
                 <TextBlock Text="Amendment / New Version Title *"
                            FontWeight="SemiBold" Margin="0,0,0,4"/>
-                <TextBox x:Name="TitleBox" Padding="6,4"
-                         PlaceholderText="e.g. Single-Use Plastics Regulation Act (2nd Amendment)"/>
+                <TextBox x:Name="TitleBox"
+                         Style="{StaticResource PlaceholderTextBox}"
+                         Tag="e.g. Single-Use Plastics Regulation Act (2nd Amendment)"/>
 
                 <TextBlock Text="What Changed (Content Summary) *"
                            FontWeight="SemiBold" Margin="0,10,0,4"/>
-                <TextBox x:Name="ContentBox" Height="90" Padding="6,4"
+                <TextBox x:Name="ContentBox" Height="90"
+                         Style="{StaticResource PlaceholderTextBox}"
+                         Tag="Describe what this amendment changes or adds..."
                          TextWrapping="Wrap" AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         PlaceholderText="Describe what this amendment changes or adds..."/>
+                         VerticalScrollBarVisibility="Auto"/>
 
                 <TextBlock Text="Amendment Notes (what specifically changed)"
                            FontWeight="SemiBold" Margin="0,10,0,4"/>
-                <TextBox x:Name="NotesBox" Height="60" Padding="6,4"
+                <TextBox x:Name="NotesBox" Height="60"
+                         Style="{StaticResource PlaceholderTextBox}"
+                         Tag="e.g. Expanded coverage; added penalty provisions."
                          TextWrapping="Wrap" AcceptsReturn="True"
-                         VerticalScrollBarVisibility="Auto"
-                         PlaceholderText="e.g. Expanded coverage; added penalty provisions."/>
+                         VerticalScrollBarVisibility="Auto"/>
 
                 <TextBlock Text="Enacted By (amending ordinance number)"
                            FontWeight="SemiBold" Margin="0,10,0,4"/>
-                <TextBox x:Name="EnactedByBox" Padding="6,4"
-                         PlaceholderText="e.g. Ordinance No. 2024-005"/>
+                <TextBox x:Name="EnactedByBox"
+                         Style="{StaticResource PlaceholderTextBox}"
+                         Tag="e.g. Ordinance No. 2024-005"/>
 
                 <TextBlock Text="Date Enacted *" FontWeight="SemiBold" Margin="0,10,0,4"/>
                 <DatePicker x:Name="DatePicker" Height="28"/>
