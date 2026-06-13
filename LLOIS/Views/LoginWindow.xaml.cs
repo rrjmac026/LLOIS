@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace LLOIS.Views;
+﻿namespace LLOIS.Views;
 
 using System.Windows;
 using System.Windows.Input;
@@ -14,14 +10,15 @@ using LLOIS.Services;
 public partial class LoginWindow : Window
 {
     private readonly IAuthService _auth;
+    public readonly AppDbContext Db;
     public User? LoggedInUser { get; private set; }
 
     public LoginWindow()
     {
         InitializeComponent();
-        var db = new AppDbContext();
-        DbSeeder.Seed(db);
-        _auth = new AuthService(new UserRepository(db), db);
+        Db = new AppDbContext();
+        DbSeeder.Seed(Db);
+        _auth = new AuthService(new UserRepository(Db), Db);
     }
 
     private void TryLogin()

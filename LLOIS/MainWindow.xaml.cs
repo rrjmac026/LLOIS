@@ -17,11 +17,11 @@ public partial class MainWindow : Window
     private readonly User _currentUser;
     private string _searchQuery = string.Empty;
 
-    public MainWindow(User user)
+    public MainWindow(User user, AppDbContext db)
     {
         InitializeComponent();
         _currentUser = user;
-        _db = new AppDbContext();
+        _db = db;
         _service = new OrdinanceService(new OrdinanceRepository(_db));
         _auth = new AuthService(new UserRepository(_db), _db);
     }

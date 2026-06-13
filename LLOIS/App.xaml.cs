@@ -1,8 +1,4 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
-
-namespace LLOIS;
+﻿namespace LLOIS;
 
 using System.Windows;
 using LLOIS.Views;
@@ -16,7 +12,7 @@ public partial class App : Application
         var login = new LoginWindow();
         if (login.ShowDialog() == true && login.LoggedInUser is not null)
         {
-            var main = new MainWindow(login.LoggedInUser);
+            var main = new MainWindow(login.LoggedInUser, login.Db);
             main.Show();
         }
         else
