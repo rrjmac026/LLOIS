@@ -34,17 +34,25 @@ public partial class MainWindow : Window
 
     private void LoadOrdinances()
     {
-        var results = _service.Search(_searchQuery).ToList();
-
-        if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All"
-            && Enum.TryParse<OrdinanceStatus>(status.Replace(" ", ""), out var parsed))
+        try
         {
-            results = results.Where(o => o.Status == parsed).ToList();
-        }
+            var results = _service.Search(_searchQuery).ToList();
 
-        OrdinanceList.ItemsSource = results;
-        ResultCount.Text = $"{results.Count} ordinance(s) found";
-        DetailPanel.Visibility = Visibility.Collapsed;
+            if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All"
+                && Enum.TryParse<OrdinanceStatus>(status.Replace(" ", ""), out var parsed))
+            {
+                results = results.Where(o => o.Status == parsed).ToList();
+            }
+
+            OrdinanceList.ItemsSource = results;
+            ResultCount.Text = $"{results.Count} ordinance(s) found";
+            DetailPanel.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error: {ex.Message}\n\nInner: {ex.InnerException?.Message}\n\nStack: {ex.StackTrace}", 
+                "Debug Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void SearchButton_Click(object sender, RoutedEventArgs e)
