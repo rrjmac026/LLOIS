@@ -4,7 +4,11 @@ using System.Text;
 
 namespace LLOIS.Models
 {
-    internal class Enums
+    public enum OrdinanceStatus
     {
+        InEffect,
+        Amended,
+        Superseded,
+        Repealed
     }
 }
