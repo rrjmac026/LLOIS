@@ -33,7 +33,8 @@ public partial class ReportsWindow : Window
 
     private void ReportTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!IsLoaded) return;
+        if (_service is null) return;       // ← add this
+        if (!IsLoaded) return;              // ← add this (if not already there)
 
         var tab = (ReportTabs.SelectedItem as TabItem)?.Header?.ToString();
         YearFilterPanel.Visibility   = tab == "By Year"   ? Visibility.Visible : Visibility.Collapsed;
@@ -42,19 +43,26 @@ public partial class ReportsWindow : Window
         LoadReport();
     }
 
-    private void Filter_Changed(object sender, SelectionChangedEventArgs e) => LoadReport();
+    private void Filter_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_service is null) return;   // ← add this
+        LoadReport();
+    }
 
     private void LoadReport()
     {
+        if (_service is null) return;                    // ← add this
+        if (ReportTabs.SelectedItem is null) return;     // ← add this
+
         var tab = (ReportTabs.SelectedItem as TabItem)?.Header?.ToString() ?? "All Ordinances";
 
         _currentData = tab switch
         {
-            "By Year" => LoadByYear(),
+            "By Year"   => LoadByYear(),
             "By Status" => LoadByStatus(),
-            "Repealed" => _service.GetByStatus(OrdinanceStatus.Repealed).ToList(),
-            "Amended" => _service.Search("").Where(o => o.HasAmendments).ToList(),
-            _ => _service.Search("").ToList()
+            "Repealed"  => _service.GetByStatus(OrdinanceStatus.Repealed).ToList(),
+            "Amended"   => _service.Search("").Where(o => o.HasAmendments).ToList(),
+            _           => _service.Search("").ToList()
         };
 
         ReportGrid.ItemsSource = _currentData;
