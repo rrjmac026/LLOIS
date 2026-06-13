@@ -307,17 +307,26 @@ public partial class MainWindow : Window
 
         _auth.LogAction(_currentUser, "LOGOUT", $"{_currentUser.Username} logged out.");
 
-        // Open a new login window
+        // Switch shutdown mode so closing this window doesn't kill the whole app
+        Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+        // Close THIS window first so it's gone before login appears
+        this.Close();
+
+        // Now show login
         var login = new LoginWindow();
         if (login.ShowDialog() == true && login.LoggedInUser is not null)
         {
-            // Logged in as someone else — open a new MainWindow
+            // Restore normal shutdown mode and open new MainWindow
+            Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
             var main = new MainWindow(login.LoggedInUser, login.Db);
             main.Show();
         }
-
-        // Close this window either way
-        this.Close();
+        else
+        {
+            // User closed/cancelled login — shut down the app
+            Application.Current.Shutdown();
+        }
     }
 
     private void ClearDetail()
