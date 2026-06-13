@@ -17,6 +17,11 @@ public partial class MainWindow : Window
     private readonly User _currentUser;
     private string _searchQuery = string.Empty;
 
+    public MainWindow()
+    {
+        throw new InvalidOperationException("Use MainWindow(User, AppDbContext) instead.");
+    }
+
     public MainWindow(User user, AppDbContext db)
     {
         InitializeComponent();
@@ -36,6 +41,9 @@ public partial class MainWindow : Window
     {
         try
         {
+            if (_service == null)
+                return;
+
             var results = _service.Search(_searchQuery).ToList();
 
             if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All"
