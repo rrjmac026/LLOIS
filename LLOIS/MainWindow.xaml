@@ -61,10 +61,15 @@
                         <DataTemplate>
                             <StackPanel Margin="4">
                                 <TextBlock Text="{Binding OrdinanceNumber}" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock Text="{Binding Title}" FontSize="12" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding Subject}" FontSize="11"
-                                           Foreground="Gray" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding Status}" FontSize="11"
-                                           Foreground="SteelBlue" Margin="0,2,0,0"/>
+                                        Foreground="Gray" TextWrapping="Wrap"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                    <TextBlock Text="{Binding Status}" FontSize="11"
+                                            Foreground="SteelBlue"/>
+                                    <TextBlock Text=" · " FontSize="11" Foreground="Gray"/>
+                                    <TextBlock Text="{Binding Type}" FontSize="11" Foreground="Gray"/>
+                                </StackPanel>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

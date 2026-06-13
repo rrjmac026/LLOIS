@@ -93,7 +93,7 @@ public partial class MainWindow : Window
 
         DetailId.Text = o.OrdinanceNumber;
         DetailSubject.Text = o.Subject;
-        DetailSeries.Text = o.SeriesNumber;
+        DetailSeries.Text = $"{o.SeriesNumber}  ·  {o.Type}  ·  Sponsor: {o.Sponsor}";
         DetailStatus.Text = o.Status.ToString();
 
         (StatusBadgeControl.Background, StatusBadgeControl.BorderBrush) = o.Status switch
