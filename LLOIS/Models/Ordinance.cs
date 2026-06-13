@@ -6,7 +6,8 @@ namespace LLOIS.Models;
 
 public class Ordinance
 {
-    public string Id { get; set; } = string.Empty;         // e.g. "ORD-2020-001"
+    public int Id { get; set; }
+    public string OrdinanceNumber { get; set; } = string.Empty;
     public string SeriesNumber { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
     public OrdinanceStatus Status { get; set; }

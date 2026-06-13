@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using LLOIS.Data;
 using LLOIS.Models;
 using LLOIS.Repositories;
 using LLOIS.Services;
@@ -11,12 +12,23 @@ using LLOIS.Services;
 public partial class MainWindow : Window
 {
     private readonly IOrdinanceService _service;
+    private readonly IAuthService _auth;
+    private readonly AppDbContext _db;
+    private readonly User _currentUser;
     private string _searchQuery = string.Empty;
 
-    public MainWindow()
+    public MainWindow(User user)
     {
         InitializeComponent();
-        _service = new OrdinanceService(new OrdinanceRepository());
+        _currentUser = user;
+        _db = new AppDbContext();
+        _service = new OrdinanceService(new OrdinanceRepository(_db));
+        _auth = new AuthService(new UserRepository(_db), _db);
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        Title = $"LLOIS — {_currentUser.Username} ({_currentUser.Role})";
         LoadOrdinances();
     }
 
@@ -24,10 +36,9 @@ public partial class MainWindow : Window
     {
         var results = _service.Search(_searchQuery).ToList();
 
-        // Apply status filter
-        if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All")
+        if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All"
+            && Enum.TryParse<OrdinanceStatus>(status.Replace(" ", ""), out var parsed))
         {
-            var parsed = Enum.Parse<OrdinanceStatus>(status.Replace(" ", ""));
             results = results.Where(o => o.Status == parsed).ToList();
         }
 
@@ -54,7 +65,7 @@ public partial class MainWindow : Window
     {
         if (OrdinanceList.SelectedItem is not Ordinance ordinance) return;
 
-        var detail = _service.GetDetails(ordinance.Id);
+        var detail = _service.GetDetails(ordinance.OrdinanceNumber);
         if (detail is null) return;
 
         ShowDetail(detail);
@@ -64,23 +75,21 @@ public partial class MainWindow : Window
     {
         DetailPanel.Visibility = Visibility.Visible;
 
-        DetailId.Text = o.Id;
+        DetailId.Text = o.OrdinanceNumber;
         DetailSubject.Text = o.Subject;
         DetailSeries.Text = o.SeriesNumber;
         DetailStatus.Text = o.Status.ToString();
 
-        // Status badge color
         (StatusBadgeControl.Background, StatusBadgeControl.BorderBrush) = o.Status switch
         {
-            OrdinanceStatus.InEffect => (Brushes.LightGreen, Brushes.Green),
-            OrdinanceStatus.Amended => (Brushes.LightYellow, Brushes.Orange),
+            OrdinanceStatus.InEffect   => (Brushes.LightGreen, Brushes.Green),
+            OrdinanceStatus.Amended    => (Brushes.LightYellow, Brushes.Orange),
             OrdinanceStatus.Superseded => (Brushes.LightBlue, Brushes.SteelBlue),
-            OrdinanceStatus.Repealed => (Brushes.LightCoral, Brushes.Red),
+            OrdinanceStatus.Repealed   => (Brushes.LightCoral, Brushes.Red),
             _ => (Brushes.LightGray, Brushes.Gray)
         };
         StatusBadgeControl.BorderThickness = new Thickness(1);
 
-        // Latest version
         LatestVersionPanel.Children.Clear();
         if (o.LatestVersion is OrdinanceVersion latest)
         {
@@ -92,10 +101,11 @@ public partial class MainWindow : Window
                 LatestVersionPanel.Children.Add(MakeRow("Notes", latest.AmendmentNotes, color: "#CC6600"));
         }
 
-        // Version history (oldest first, excluding latest)
         var history = o.Versions.OrderBy(v => v.VersionNumber).SkipLast(1).ToList();
         HistoryHeader.Visibility = history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         VersionHistoryList.ItemsSource = history;
+
+        _auth.LogAction(_currentUser, "VIEW", $"Viewed ordinance {o.OrdinanceNumber}");
     }
 
     private static StackPanel MakeRow(string label, string value, bool bold = false, string? color = null)

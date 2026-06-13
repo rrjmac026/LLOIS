@@ -1,0 +1,27 @@
+<Window x:Class="LLOIS.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LLOIS — Login" Height="300" Width="380"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+
+    <StackPanel Margin="40">
+        <TextBlock Text="🏛️ LLOIS" FontSize="22" FontWeight="Bold"
+                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+        <TextBlock Text="Local Legislative Ordinance Information System"
+                   FontSize="11" Foreground="Gray" TextAlignment="Center"
+                   TextWrapping="Wrap" Margin="0,0,0,24"/>
+
+        <TextBlock Text="Username" FontWeight="SemiBold" Margin="0,0,0,4"/>
+        <TextBox x:Name="UsernameBox" Padding="6,4" Margin="0,0,0,12"/>
+
+        <TextBlock Text="Password" FontWeight="SemiBold" Margin="0,0,0,4"/>
+        <PasswordBox x:Name="PasswordBox" Padding="6,4" Margin="0,0,0,16"
+                     KeyDown="PasswordBox_KeyDown"/>
+
+        <TextBlock x:Name="ErrorText" Foreground="Red" Margin="0,0,0,8"
+                   Visibility="Collapsed"/>
+
+        <Button Content="Login" Height="36" FontSize="14"
+                Click="LoginButton_Click"/>
+    </StackPanel>
+</Window>

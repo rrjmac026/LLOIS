@@ -4,28 +4,35 @@ using System.Text;
 
 namespace LLOIS.Repositories;
 
+using Microsoft.EntityFrameworkCore;
+using LLOIS.Data;
 using LLOIS.Models;
 
-public class OrdinanceRepository : IOrdinanceRepository
+public class OrdinanceRepository(AppDbContext db) : IOrdinanceRepository
 {
-    private readonly List<Ordinance> _store = SeedData.Get();
+    public IEnumerable<Ordinance> GetAll() =>
+        db.Ordinances.Include(o => o.Versions).ToList();
 
-    public IEnumerable<Ordinance> GetAll() => _store;
-
-    public Ordinance? GetById(string id) =>
-        _store.FirstOrDefault(o => o.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+    public Ordinance? GetById(string ordinanceNumber) =>
+        db.Ordinances.Include(o => o.Versions)
+            .FirstOrDefault(o => o.OrdinanceNumber == ordinanceNumber);
 
     public IEnumerable<Ordinance> Search(string query) =>
-        _store.Where(o =>
-            o.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-            o.Subject.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-            o.SeriesNumber.Contains(query, StringComparison.OrdinalIgnoreCase));
+        db.Ordinances.Include(o => o.Versions)
+            .Where(o => o.OrdinanceNumber.Contains(query) ||
+                        o.Subject.Contains(query) ||
+                        o.SeriesNumber.Contains(query))
+            .ToList();
 
-    public void Add(Ordinance ordinance) => _store.Add(ordinance);
+    public void Add(Ordinance ordinance)
+    {
+        db.Ordinances.Add(ordinance);
+        db.SaveChanges();
+    }
 
     public void Update(Ordinance ordinance)
     {
-        var index = _store.FindIndex(o => o.Id == ordinance.Id);
-        if (index >= 0) _store[index] = ordinance;
+        db.Ordinances.Update(ordinance);
+        db.SaveChanges();
     }
 }

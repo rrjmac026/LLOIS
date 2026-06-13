@@ -11,4 +11,11 @@ namespace LLOIS.Models
         Superseded,
         Repealed
     }
+
+    public enum UserRole
+    {
+        Admin,
+        Encoder,
+        Viewer
+    }
 }

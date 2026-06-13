@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:LLOIS"
         Title="LLOIS - Local Legislative Ordinance Information System"
-        Height="600" Width="950" MinHeight="500" MinWidth="750">
+        Height="600" Width="950" MinHeight="500" MinWidth="750" Loaded="Window_Loaded">
 
     <Window.Resources>
         <Style x:Key="StatusBadge" TargetType="Border">
@@ -60,7 +60,7 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="4">
-                                <TextBlock Text="{Binding Id}" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock Text="{Binding OrdinanceNumber}" FontWeight="SemiBold" FontSize="13"/>
                                 <TextBlock Text="{Binding Subject}" FontSize="11"
                                            Foreground="Gray" TextWrapping="Wrap"/>
                                 <TextBlock Text="{Binding Status}" FontSize="11"
