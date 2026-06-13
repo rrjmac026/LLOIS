@@ -1,0 +1,33 @@
+<Window x:Class="LLOIS.Views.AuditLogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LLOIS — Audit Log" Height="520" Width="780"
+        WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
+
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="#1a1a2e" Padding="16,12">
+            <DockPanel>
+                <TextBlock x:Name="CountLabel" DockPanel.Dock="Right"
+                           Foreground="#AAAACC" VerticalAlignment="Center" FontSize="12"/>
+                <TextBlock Text="🔍 Audit Log (Last 200 actions)" Foreground="White"
+                           FontSize="15" FontWeight="Bold"/>
+            </DockPanel>
+        </Border>
+
+        <DataGrid x:Name="LogGrid"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  RowHeaderWidth="0"
+                  AlternatingRowBackground="#F5F5FF"
+                  CanUserSortColumns="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Timestamp"
+                    Binding="{Binding Timestamp, StringFormat=\{0:MM/dd/yyyy HH:mm:ss\}}" Width="150"/>
+                <DataGridTextColumn Header="User" Binding="{Binding Username}" Width="110"/>
+                <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="90"/>
+                <DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</Window>

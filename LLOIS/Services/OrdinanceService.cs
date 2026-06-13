@@ -1,7 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace LLOIS.Services;
 
 using LLOIS.Models;
@@ -13,6 +9,17 @@ public class OrdinanceService(IOrdinanceRepository repo) : IOrdinanceService
         string.IsNullOrWhiteSpace(query) ? repo.GetAll() : repo.Search(query);
 
     public Ordinance? GetDetails(string id) => repo.GetById(id);
+
+    public void Add(Ordinance ordinance) => repo.Add(ordinance);
+
+    public void Update(Ordinance ordinance) => repo.Update(ordinance);
+
+    public void Delete(string ordinanceNumber)
+    {
+        var ordinance = repo.GetById(ordinanceNumber)
+            ?? throw new InvalidOperationException("Ordinance not found.");
+        repo.Delete(ordinance);
+    }
 
     public void AddAmendment(string ordinanceId, OrdinanceVersion newVersion)
     {
@@ -34,4 +41,17 @@ public class OrdinanceService(IOrdinanceRepository repo) : IOrdinanceService
         ordinance.Status = status;
         repo.Update(ordinance);
     }
+
+    public IEnumerable<Ordinance> GetByYear(int year) =>
+        repo.GetAll().Where(o => o.DatePassed?.Year == year);
+
+    public IEnumerable<Ordinance> GetByStatus(OrdinanceStatus status) =>
+        repo.GetAll().Where(o => o.Status == status);
+
+    public IEnumerable<int> GetAvailableYears() =>
+        repo.GetAll()
+            .Where(o => o.DatePassed.HasValue)
+            .Select(o => o.DatePassed!.Value.Year)
+            .Distinct()
+            .OrderByDescending(y => y);
 }

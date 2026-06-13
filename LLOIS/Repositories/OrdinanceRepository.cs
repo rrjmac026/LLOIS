@@ -1,4 +1,4 @@
-﻿namespace LLOIS.Repositories;
+namespace LLOIS.Repositories;
 
 using Microsoft.EntityFrameworkCore;
 using LLOIS.Data;
@@ -17,7 +17,10 @@ public class OrdinanceRepository(AppDbContext db) : IOrdinanceRepository
         db.Ordinances.Include(o => o.Versions)
             .Where(o => o.OrdinanceNumber.Contains(query) ||
                         o.Subject.Contains(query) ||
-                        o.SeriesNumber.Contains(query))
+                        o.SeriesNumber.Contains(query) ||
+                        o.Title.Contains(query) ||
+                        o.Sponsor.Contains(query) ||
+                        o.Committee.Contains(query))
             .ToList();
 
     public void Add(Ordinance ordinance)
@@ -29,6 +32,12 @@ public class OrdinanceRepository(AppDbContext db) : IOrdinanceRepository
     public void Update(Ordinance ordinance)
     {
         db.Ordinances.Update(ordinance);
+        db.SaveChanges();
+    }
+
+    public void Delete(Ordinance ordinance)
+    {
+        db.Ordinances.Remove(ordinance);
         db.SaveChanges();
     }
 }

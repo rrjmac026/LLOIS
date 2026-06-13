@@ -1,7 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace LLOIS.Services;
 
 using BCrypt.Net;
@@ -29,4 +25,39 @@ public class AuthService(IUserRepository userRepo, AppDbContext db) : IAuthServi
         });
         db.SaveChanges();
     }
+
+    public IEnumerable<User> GetAllUsers() => userRepo.GetAll();
+
+    public void CreateUser(string username, string password, UserRole role)
+    {
+        if (db.Users.Any(u => u.Username == username))
+            throw new InvalidOperationException($"Username '{username}' already exists.");
+
+        userRepo.Add(new User
+        {
+            Username = username,
+            PasswordHash = BCrypt.HashPassword(password),
+            Role = role,
+            IsActive = true
+        });
+    }
+
+    public void ResetPassword(int userId, string newPassword)
+    {
+        var user = db.Users.Find(userId)
+            ?? throw new InvalidOperationException("User not found.");
+        user.PasswordHash = BCrypt.HashPassword(newPassword);
+        userRepo.Update(user);
+    }
+
+    public void SetActiveStatus(int userId, bool isActive)
+    {
+        var user = db.Users.Find(userId)
+            ?? throw new InvalidOperationException("User not found.");
+        user.IsActive = isActive;
+        userRepo.Update(user);
+    }
+
+    public IEnumerable<AuditLog> GetRecentLogs(int count = 200) =>
+        db.AuditLogs.OrderByDescending(l => l.Timestamp).Take(count).ToList();
 }

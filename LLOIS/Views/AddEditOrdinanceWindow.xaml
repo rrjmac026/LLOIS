@@ -1,0 +1,235 @@
+<Window x:Class="LLOIS.Views.AddEditOrdinanceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Add Ordinance" Height="700" Width="680"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+
+    <Window.Resources>
+        <Style TargetType="TextBlock" x:Key="Label">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,10,0,3"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+        <Style TargetType="DatePicker">
+            <Setter Property="Height" Value="28"/>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel Margin="0">
+        <!-- Title Bar -->
+        <Border DockPanel.Dock="Top" Background="#1a3a6b" Padding="16,12">
+            <TextBlock x:Name="WindowTitle" Text="➕ Add New Ordinance"
+                       Foreground="White" FontSize="15" FontWeight="Bold"/>
+        </Border>
+
+        <!-- Buttons -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CancelBtn" Content="Cancel" Width="90" Margin="0,0,8,0"
+                        Click="CancelBtn_Click"/>
+                <Button x:Name="SaveBtn" Content="Save Ordinance" Width="130"
+                        Background="#1a3a6b" Foreground="White" FontWeight="SemiBold"
+                        Click="SaveBtn_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Form -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20,12,20,12">
+
+                <!-- Error Banner -->
+                <Border x:Name="ErrorBanner" Background="#FFF0F0" BorderBrush="#FFCCCC"
+                        BorderThickness="1" CornerRadius="4" Padding="10,8"
+                        Margin="0,0,0,10" Visibility="Collapsed">
+                    <TextBlock x:Name="ErrorText" Foreground="#CC0000" TextWrapping="Wrap"/>
+                </Border>
+
+                <!-- Section: Identity -->
+                <TextBlock Text="📋 Ordinance Identity" FontSize="13" FontWeight="Bold"
+                           Foreground="#1a3a6b" Margin="0,0,0,6"/>
+                <Separator Margin="0,0,0,4"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Ordinance Number *" Style="{StaticResource Label}"/>
+                        <TextBox x:Name="OrdNumberBox" PlaceholderText="e.g. ORD-2024-001"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Series Number *" Style="{StaticResource Label}"/>
+                        <TextBox x:Name="SeriesBox" PlaceholderText="e.g. Series of 2024, No. 1"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Title *" Style="{StaticResource Label}"/>
+                <TextBox x:Name="TitleBox" PlaceholderText="Official title of the ordinance"/>
+
+                <TextBlock Text="Subject *" Style="{StaticResource Label}"/>
+                <TextBox x:Name="SubjectBox" Height="56" TextWrapping="Wrap"
+                         AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                         PlaceholderText="Full subject / long title of the ordinance"/>
+
+                <Grid Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Type *" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="TypeCombo">
+                            <ComboBoxItem Content="Regulatory"/>
+                            <ComboBoxItem Content="Revenue"/>
+                            <ComboBoxItem Content="Administrative"/>
+                            <ComboBoxItem Content="Penal"/>
+                            <ComboBoxItem Content="Appropriation"/>
+                            <ComboBoxItem Content="Other"/>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Status *" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="StatusCombo">
+                            <ComboBoxItem Content="In Effect"/>
+                            <ComboBoxItem Content="Amended"/>
+                            <ComboBoxItem Content="Superseded"/>
+                            <ComboBoxItem Content="Repealed"/>
+                            <ComboBoxItem Content="Under Review"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Section: Authorship -->
+                <TextBlock Text="👤 Authorship &amp; Committee" FontSize="13" FontWeight="Bold"
+                           Foreground="#1a3a6b" Margin="0,16,0,6"/>
+                <Separator Margin="0,0,0,4"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Sponsor / Author *" Style="{StaticResource Label}"/>
+                        <TextBox x:Name="SponsorBox" PlaceholderText="e.g. Hon. Juan dela Cruz"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Committee" Style="{StaticResource Label}"/>
+                        <TextBox x:Name="CommitteeBox" PlaceholderText="e.g. Committee on Environment"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Section: Dates -->
+                <TextBlock Text="📅 Important Dates" FontSize="13" FontWeight="Bold"
+                           Foreground="#1a3a6b" Margin="0,16,0,6"/>
+                <Separator Margin="0,0,0,4"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Date Passed" Style="{StaticResource Label}"/>
+                        <DatePicker x:Name="DatePassedPicker"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Approved by Mayor" Style="{StaticResource Label}"/>
+                        <DatePicker x:Name="DateApprovedPicker"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Date Published" Style="{StaticResource Label}"/>
+                        <DatePicker x:Name="DatePublishedPicker"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Section: Relationships -->
+                <TextBlock Text="🔗 Ordinance Relationships" FontSize="13" FontWeight="Bold"
+                           Foreground="#1a3a6b" Margin="0,16,0,6"/>
+                <Separator Margin="0,0,0,4"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Amends Ordinance No." Style="{StaticResource Label}"/>
+                        <TextBox x:Name="AmendsBox" PlaceholderText="e.g. ORD-2020-001"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Supersedes Ordinance No." Style="{StaticResource Label}"/>
+                        <TextBox x:Name="SupersedesBox" PlaceholderText="e.g. ORD-2015-010"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Repealed By Ordinance No." Style="{StaticResource Label}"/>
+                        <TextBox x:Name="RepealedByBox" PlaceholderText="e.g. ORD-2023-002"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Repeal Reason" Style="{StaticResource Label}"/>
+                        <TextBox x:Name="RepealReasonBox" PlaceholderText="Reason for repeal (if applicable)"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Section: Initial Version -->
+                <TextBlock x:Name="VersionSectionHeader"
+                           Text="📄 Initial Version Content" FontSize="13" FontWeight="Bold"
+                           Foreground="#1a3a6b" Margin="0,16,0,6"/>
+                <Separator x:Name="VersionSeparator" Margin="0,0,0,4"/>
+                <StackPanel x:Name="VersionSection">
+                    <TextBlock Text="Version Title *" Style="{StaticResource Label}"/>
+                    <TextBox x:Name="VersionTitleBox" PlaceholderText="Title for Version 1"/>
+
+                    <TextBlock Text="Content / Summary *" Style="{StaticResource Label}"/>
+                    <TextBox x:Name="VersionContentBox" Height="80" TextWrapping="Wrap"
+                             AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
+                             PlaceholderText="Describe what this ordinance contains..."/>
+
+                    <TextBlock Text="Enacted By" Style="{StaticResource Label}"/>
+                    <TextBox x:Name="EnactedByBox" PlaceholderText="e.g. Ordinance No. 2024-001"/>
+
+                    <TextBlock Text="Date Enacted *" Style="{StaticResource Label}"/>
+                    <DatePicker x:Name="VersionDatePicker"/>
+                </StackPanel>
+
+                <!-- Section: PDF Attachment -->
+                <TextBlock Text="📎 Document Attachment" FontSize="13" FontWeight="Bold"
+                           Foreground="#1a3a6b" Margin="0,16,0,6"/>
+                <Separator Margin="0,0,0,4"/>
+
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Browse..." Width="90"
+                            Margin="8,0,0,0" Click="BrowsePdf_Click"/>
+                    <TextBox x:Name="PdfPathBox" IsReadOnly="True"
+                             PlaceholderText="No PDF attached (optional)"
+                             Background="#F8F8F8"/>
+                </DockPanel>
+                <TextBlock Text="Attach the original signed PDF of this ordinance."
+                           FontSize="11" Foreground="Gray" Margin="0,4,0,0"/>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
