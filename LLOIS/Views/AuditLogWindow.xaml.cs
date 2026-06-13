@@ -17,7 +17,7 @@ public partial class AuditLogWindow : Window
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
-        var logs = _auth.GetAuditLog().OrderByDescending(l => l.Timestamp).ToList();
+        var logs = _auth.GetRecentLogs().OrderByDescending(l => l.Timestamp).ToList();
         AuditGrid.ItemsSource = logs;
         RecordCount.Text = $"{logs.Count} record(s)";
     }
