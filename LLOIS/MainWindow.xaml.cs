@@ -54,6 +54,8 @@ public partial class MainWindow : Window
 
     private void LoadOrdinances()
     {
+        if (_service is null) return;
+
         try
         {
             var results = _service.Search(_searchQuery).ToList();
@@ -87,7 +89,12 @@ public partial class MainWindow : Window
         if (e.Key == Key.Enter) SearchButton_Click(sender, e);
     }
 
-    private void StatusFilter_Changed(object sender, SelectionChangedEventArgs e) => LoadOrdinances();
+    private void StatusFilter_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_service is null) return; // ← add this
+        LoadOrdinances();
+    }
+    
 
     private void OrdinanceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
