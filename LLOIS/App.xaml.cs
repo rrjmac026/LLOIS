@@ -10,18 +10,22 @@ public partial class App : Application
         PdfFontResolver.Apply();
         
         base.OnStartup(e);
-        ShutdownMode = ShutdownMode.OnExplicitShutdown; // prevent premature exit
+        // ShutdownMode = ShutdownMode.OnExplicitShutdown; // prevent premature exit
 
-        var login = new LoginWindow();
-        if (login.ShowDialog() == true && login.LoggedInUser is not null)
-        {
-            ShutdownMode = ShutdownMode.OnLastWindowClose; // restore normal behavior
-            var main = new MainWindow(login.LoggedInUser, login.Db);
-            main.Show();
-        }
-        else
-        {
-            Shutdown();
-        }
+        // var login = new LoginWindow();
+        // if (login.ShowDialog() == true && login.LoggedInUser is not null)
+        // {
+        //     ShutdownMode = ShutdownMode.OnLastWindowClose; // restore normal behavior
+        //     var main = new MainWindow(login.LoggedInUser, login.Db);
+        //     main.Show();
+        // }
+        // else
+        // {
+        //     Shutdown();
+        // }
+
+        base.OnStartup(e);
+        var shell = new ShellWindow();
+        shell.Show();
     }
 }

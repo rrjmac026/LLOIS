@@ -1,24 +1,30 @@
-﻿namespace LLOIS.Views;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace LLOIS.Views;
 
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using LLOIS.Data;
 using LLOIS.Models;
 using LLOIS.Repositories;
 using LLOIS.Services;
 
-public partial class LoginWindow : Window
+public partial class LoginView : UserControl
 {
     private readonly IAuthService _auth;
-    public readonly AppDbContext Db;
-    public User? LoggedInUser { get; private set; }
+    private readonly AppDbContext _db;
 
-    public LoginWindow()
+    public event Action<User, AppDbContext>? LoginSucceeded;
+
+    public LoginView()
     {
         InitializeComponent();
-        Db = new AppDbContext();
-        DbSeeder.Seed(Db);
-        _auth = new AuthService(new UserRepository(Db), Db);
+        _db = new AppDbContext();
+        DbSeeder.Seed(_db);
+        _auth = new AuthService(new UserRepository(_db), _db);
     }
 
     private void TryLogin()
@@ -42,9 +48,8 @@ public partial class LoginWindow : Window
             return;
         }
 
-        LoggedInUser = user;
         ErrorBanner.Visibility = Visibility.Collapsed;
-        DialogResult = true;
+        LoginSucceeded?.Invoke(user, _db);
     }
 
     private void LoginButton_Click(object sender, RoutedEventArgs e) => TryLogin();

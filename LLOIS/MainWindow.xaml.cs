@@ -1,4 +1,4 @@
-namespace LLOIS;
+namespace LLOIS.Views;
 
 using System.Diagnostics;
 using System.Windows;
@@ -9,9 +9,8 @@ using LLOIS.Data;
 using LLOIS.Models;
 using LLOIS.Repositories;
 using LLOIS.Services;
-using LLOIS.Views;
 
-public partial class MainWindow : Window
+public partial class MainView : UserControl
 {
     private readonly IOrdinanceService _service;
     private readonly IAuthService _auth;
@@ -20,51 +19,42 @@ public partial class MainWindow : Window
     private string _searchQuery = string.Empty;
     private Ordinance? _selectedOrdinance;
 
-    public MainWindow()
-    {
-        throw new InvalidOperationException("Use MainWindow(User, AppDbContext) instead.");
-    }
+    public event Action? LogoutRequested;
 
-    public MainWindow(User user, AppDbContext db)
+    public MainView(User user, AppDbContext db)
     {
         InitializeComponent();
         _currentUser = user;
         _db = db;
         _service = new OrdinanceService(new OrdinanceRepository(_db));
         _auth = new AuthService(new UserRepository(_db), _db);
+
+        Loaded += OnLoaded;
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        Title = $"LLOIS — {_currentUser.Username} ({_currentUser.Role})";
         UserLabel.Text = $"{_currentUser.Username} · {_currentUser.Role}";
 
-        // Role-based UI
-        bool isAdmin   = _currentUser.Role == UserRole.Admin;
-        bool canWrite  = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
+        bool isAdmin  = _currentUser.Role == UserRole.Admin;
+        bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
 
-        AddBtn.Visibility    = canWrite ? Visibility.Visible  : Visibility.Collapsed;
-        UsersBtn.Visibility  = isAdmin  ? Visibility.Visible  : Visibility.Collapsed;
-        AuditBtn.Visibility  = isAdmin  ? Visibility.Visible  : Visibility.Collapsed;
+        AddBtn.Visibility   = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        UsersBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
+        AuditBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
 
         LoadOrdinances();
     }
 
-    // ─── Load / Search ────────────────────────────────────────────────────────
-
     private void LoadOrdinances()
     {
-        if (_service is null) return;
-
         try
         {
             var results = _service.Search(_searchQuery).ToList();
 
             if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All"
                 && Enum.TryParse<OrdinanceStatus>(status.Replace(" ", ""), out var parsed))
-            {
                 results = results.Where(o => o.Status == parsed).ToList();
-            }
 
             OrdinanceList.ItemsSource = results;
             ResultCount.Text = $"{results.Count} ordinance(s) found";
@@ -91,10 +81,9 @@ public partial class MainWindow : Window
 
     private void StatusFilter_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (_service is null) return; // ← add this
+        if (_service is null) return;
         LoadOrdinances();
     }
-    
 
     private void OrdinanceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -105,11 +94,10 @@ public partial class MainWindow : Window
         ShowDetail(detail);
     }
 
-    // ─── Toolbar Buttons ──────────────────────────────────────────────────────
-
     private void AddBtn_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new AddEditOrdinanceWindow(_service) { Owner = this };
+        var win = Window.GetWindow(this);
+        var dlg = new AddEditOrdinanceWindow(_service) { Owner = win };
         if (dlg.ShowDialog() == true)
         {
             _auth.LogAction(_currentUser, "ADD", $"Added ordinance {dlg.SavedOrdinance?.OrdinanceNumber}");
@@ -122,13 +110,14 @@ public partial class MainWindow : Window
     private void EditBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance is null) return;
-        var dlg = new AddEditOrdinanceWindow(_service, _selectedOrdinance) { Owner = this };
+        var win = Window.GetWindow(this);
+        var dlg = new AddEditOrdinanceWindow(_service, _selectedOrdinance) { Owner = win };
         if (dlg.ShowDialog() == true)
         {
-            var savedNumber = _selectedOrdinance.OrdinanceNumber; // ← save BEFORE LoadOrdinances clears it
-            _auth.LogAction(_currentUser, "EDIT", $"Edited ordinance {savedNumber}");
+            var num = _selectedOrdinance.OrdinanceNumber;
+            _auth.LogAction(_currentUser, "EDIT", $"Edited ordinance {num}");
             LoadOrdinances();
-            var updated = _service.GetDetails(savedNumber); // ← use saved number
+            var updated = _service.GetDetails(num);
             if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
@@ -136,13 +125,14 @@ public partial class MainWindow : Window
     private void AmendBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance is null) return;
-        var dlg = new AddAmendmentWindow(_service, _selectedOrdinance) { Owner = this };
+        var win = Window.GetWindow(this);
+        var dlg = new AddAmendmentWindow(_service, _selectedOrdinance) { Owner = win };
         if (dlg.ShowDialog() == true)
         {
-            var savedNumber = _selectedOrdinance.OrdinanceNumber; // ← save BEFORE LoadOrdinances clears it
-            _auth.LogAction(_currentUser, "AMEND", $"Added amendment to {savedNumber}");
+            var num = _selectedOrdinance.OrdinanceNumber;
+            _auth.LogAction(_currentUser, "AMEND", $"Added amendment to {num}");
             LoadOrdinances();
-            var updated = _service.GetDetails(savedNumber); // ← use saved number
+            var updated = _service.GetDetails(num);
             if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
@@ -150,15 +140,12 @@ public partial class MainWindow : Window
     private void OpenPdfBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance?.DocumentPath is null) return;
-
         if (!System.IO.File.Exists(_selectedOrdinance.DocumentPath))
         {
-            MessageBox.Show("The attached PDF file could not be found at:\n" +
-                            _selectedOrdinance.DocumentPath,
+            MessageBox.Show("PDF file not found at:\n" + _selectedOrdinance.DocumentPath,
                 "File Not Found", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-
         try
         {
             Process.Start(new ProcessStartInfo(_selectedOrdinance.DocumentPath) { UseShellExecute = true });
@@ -174,14 +161,10 @@ public partial class MainWindow : Window
     private void DeleteBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance is null) return;
-
         var result = MessageBox.Show(
-            $"Permanently delete ordinance {_selectedOrdinance.OrdinanceNumber}?\n\n" +
-            "This will also delete all its versions. This cannot be undone.",
+            $"Permanently delete {_selectedOrdinance.OrdinanceNumber}?\n\nThis cannot be undone.",
             "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
         if (result != MessageBoxResult.Yes) return;
-
         try
         {
             var num = _selectedOrdinance.OrdinanceNumber;
@@ -198,36 +181,45 @@ public partial class MainWindow : Window
 
     private void ReportsBtn_Click(object sender, RoutedEventArgs e)
     {
-        new ReportsWindow(_service) { Owner = this }.ShowDialog();
+        var win = Window.GetWindow(this);
+        new ReportsWindow(_service) { Owner = win }.ShowDialog();
     }
 
     private void UsersBtn_Click(object sender, RoutedEventArgs e)
     {
-        new UserManagementWindow(_auth) { Owner = this }.ShowDialog();
+        var win = Window.GetWindow(this);
+        new UserManagementWindow(_auth) { Owner = win }.ShowDialog();
     }
 
     private void AuditBtn_Click(object sender, RoutedEventArgs e)
     {
-        new AuditLogWindow(_auth) { Owner = this }.ShowDialog();
+        var win = Window.GetWindow(this);
+        new AuditLogWindow(_auth) { Owner = win }.ShowDialog();
     }
 
-    // ─── Detail Panel ─────────────────────────────────────────────────────────
+    private void LogoutBtn_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show("Are you sure you want to log out?",
+            "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (result != MessageBoxResult.Yes) return;
+
+        _auth.LogAction(_currentUser, "LOGOUT", $"{_currentUser.Username} logged out.");
+        LogoutRequested?.Invoke();
+    }
 
     private void ShowDetail(Ordinance o)
     {
         DetailPanel.Visibility = Visibility.Visible;
         ActionBar.Visibility   = Visibility.Visible;
 
-        // Role-gated action buttons
         bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
         bool isAdmin  = _currentUser.Role == UserRole.Admin;
 
-        EditBtn.Visibility   = canWrite  ? Visibility.Visible : Visibility.Collapsed;
-        AmendBtn.Visibility  = canWrite  ? Visibility.Visible : Visibility.Collapsed;
-        DeleteBtn.Visibility = isAdmin   ? Visibility.Visible : Visibility.Collapsed;
+        EditBtn.Visibility    = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        AmendBtn.Visibility   = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        DeleteBtn.Visibility  = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
         OpenPdfBtn.Visibility = o.DocumentPath is not null ? Visibility.Visible : Visibility.Collapsed;
 
-        // Header
         DetailId.Text      = o.OrdinanceNumber;
         DetailSubject.Text = o.Subject;
         DetailSeries.Text  = $"{o.SeriesNumber}  ·  {o.Type}  ·  Sponsor: {o.Sponsor}";
@@ -235,49 +227,40 @@ public partial class MainWindow : Window
 
         (StatusBadgeControl.Background, StatusBadgeControl.BorderBrush) = o.Status switch
         {
-            OrdinanceStatus.InEffect   => (Brushes.LightGreen,  Brushes.Green),
-            OrdinanceStatus.Amended    => (Brushes.LightYellow, Brushes.Orange),
-            OrdinanceStatus.Superseded => (Brushes.LightBlue,   Brushes.SteelBlue),
-            OrdinanceStatus.Repealed   => (Brushes.LightCoral,  Brushes.Red),
-            OrdinanceStatus.UnderReview=> (Brushes.LightGray,   Brushes.DarkGray),
+            OrdinanceStatus.InEffect    => (Brushes.LightGreen,  Brushes.Green),
+            OrdinanceStatus.Amended     => (Brushes.LightYellow, Brushes.Orange),
+            OrdinanceStatus.Superseded  => (Brushes.LightBlue,   Brushes.SteelBlue),
+            OrdinanceStatus.Repealed    => (Brushes.LightCoral,  Brushes.Red),
+            OrdinanceStatus.UnderReview => (Brushes.LightGray,   Brushes.DarkGray),
             _ => (Brushes.LightGray, Brushes.Gray)
         };
         StatusBadgeControl.BorderThickness = new Thickness(1);
 
-        // Relationship badges
         bool hasAny = false;
         if (!string.IsNullOrEmpty(o.AmendsOrdinanceNumber))
-        {
-            AmendsLabel.Text    = $"Amends: {o.AmendsOrdinanceNumber}";
-            AmendsPanel.Visibility = Visibility.Visible; hasAny = true;
-        } else AmendsPanel.Visibility = Visibility.Collapsed;
+        { AmendsLabel.Text = $"Amends: {o.AmendsOrdinanceNumber}"; AmendsPanel.Visibility = Visibility.Visible; hasAny = true; }
+        else AmendsPanel.Visibility = Visibility.Collapsed;
 
         if (!string.IsNullOrEmpty(o.SupersedesOrdinanceNumber))
-        {
-            SupersedesLabel.Text    = $"Supersedes: {o.SupersedesOrdinanceNumber}";
-            SupersedesPanel.Visibility = Visibility.Visible; hasAny = true;
-        } else SupersedesPanel.Visibility = Visibility.Collapsed;
+        { SupersedesLabel.Text = $"Supersedes: {o.SupersedesOrdinanceNumber}"; SupersedesPanel.Visibility = Visibility.Visible; hasAny = true; }
+        else SupersedesPanel.Visibility = Visibility.Collapsed;
 
         if (!string.IsNullOrEmpty(o.RepealedByOrdinanceNumber))
-        {
-            RepealedByLabel.Text    = $"Repealed by: {o.RepealedByOrdinanceNumber}";
-            RepealedByPanel.Visibility = Visibility.Visible; hasAny = true;
-        } else RepealedByPanel.Visibility = Visibility.Collapsed;
+        { RepealedByLabel.Text = $"Repealed by: {o.RepealedByOrdinanceNumber}"; RepealedByPanel.Visibility = Visibility.Visible; hasAny = true; }
+        else RepealedByPanel.Visibility = Visibility.Collapsed;
 
         RelationshipPanel.Visibility = hasAny ? Visibility.Visible : Visibility.Collapsed;
         PdfBadge.Visibility = !string.IsNullOrEmpty(o.DocumentPath) ? Visibility.Visible : Visibility.Collapsed;
 
-        // Metadata columns
         MetaLeft.Children.Clear();
         MetaRight.Children.Clear();
-        MetaLeft.Children.Add(MakeRow("Committee",    o.Committee));
-        MetaLeft.Children.Add(MakeRow("Date Passed",  o.DatePassed?.ToString("MMMM dd, yyyy") ?? "—"));
+        MetaLeft.Children.Add(MakeRow("Committee",      o.Committee));
+        MetaLeft.Children.Add(MakeRow("Date Passed",    o.DatePassed?.ToString("MMMM dd, yyyy") ?? "—"));
         MetaLeft.Children.Add(MakeRow("Mayor Approved", o.DateApprovedByMayor?.ToString("MMMM dd, yyyy") ?? "—"));
-        MetaRight.Children.Add(MakeRow("Date Published", o.DatePublished?.ToString("MMMM dd, yyyy") ?? "—"));
+        MetaRight.Children.Add(MakeRow("Date Published",o.DatePublished?.ToString("MMMM dd, yyyy") ?? "—"));
         if (!string.IsNullOrEmpty(o.RepealReason))
             MetaRight.Children.Add(MakeRow("Repeal Reason", o.RepealReason, color: "#8b1a1a"));
 
-        // Latest version
         LatestVersionPanel.Children.Clear();
         if (o.LatestVersion is OrdinanceVersion latest)
         {
@@ -289,44 +272,11 @@ public partial class MainWindow : Window
                 LatestVersionPanel.Children.Add(MakeRow("Notes", latest.AmendmentNotes, color: "#CC6600"));
         }
 
-        // Version history (all except latest)
         var history = o.Versions.OrderBy(v => v.VersionNumber).SkipLast(1).ToList();
-        HistoryHeader.Visibility   = history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        HistoryHeader.Visibility       = history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         VersionHistoryList.ItemsSource = history;
 
         _auth.LogAction(_currentUser, "VIEW", $"Viewed ordinance {o.OrdinanceNumber}");
-    }
-
-    private void LogoutBtn_Click(object sender, RoutedEventArgs e)
-    {
-        var result = MessageBox.Show(
-            "Are you sure you want to log out?",
-            "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-        if (result != MessageBoxResult.Yes) return;
-
-        _auth.LogAction(_currentUser, "LOGOUT", $"{_currentUser.Username} logged out.");
-
-        // Switch shutdown mode so closing this window doesn't kill the whole app
-        Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-
-        // Close THIS window first so it's gone before login appears
-        this.Close();
-
-        // Now show login
-        var login = new LoginWindow();
-        if (login.ShowDialog() == true && login.LoggedInUser is not null)
-        {
-            // Restore normal shutdown mode and open new MainWindow
-            Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
-            var main = new MainWindow(login.LoggedInUser, login.Db);
-            main.Show();
-        }
-        else
-        {
-            // User closed/cancelled login — shut down the app
-            Application.Current.Shutdown();
-        }
     }
 
     private void ClearDetail()
@@ -339,23 +289,14 @@ public partial class MainWindow : Window
     private static StackPanel MakeRow(string label, string value,
         bool bold = false, string? color = null)
     {
-        var panel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Margin = new Thickness(0, 2, 0, 2)
-        };
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
         panel.Children.Add(new TextBlock
         {
-            Text = label + ": ",
-            FontWeight = FontWeights.SemiBold,
-            FontSize = 12,
-            MinWidth = 110
+            Text = label + ": ", FontWeight = FontWeights.SemiBold, FontSize = 12, MinWidth = 110
         });
         panel.Children.Add(new TextBlock
         {
-            Text = value,
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 12,
+            Text = value, TextWrapping = TextWrapping.Wrap, FontSize = 12,
             FontWeight = bold ? FontWeights.Bold : FontWeights.Normal,
             Foreground = color is null
                 ? Brushes.Black
