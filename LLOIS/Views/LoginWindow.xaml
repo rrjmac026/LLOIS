@@ -1,27 +1,246 @@
 <Window x:Class="LLOIS.Views.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="LLOIS — Login" Height="300" Width="380"
-        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+        Title="LLOIS — Secure Login"
+        WindowState="Maximized"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="CanResize">
 
-    <StackPanel Margin="40">
-        <TextBlock Text="🏛️ LLOIS" FontSize="22" FontWeight="Bold"
-                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
-        <TextBlock Text="Local Legislative Ordinance Information System"
-                   FontSize="11" Foreground="Gray" TextAlignment="Center"
-                   TextWrapping="Wrap" Margin="0,0,0,24"/>
+    <Window.Resources>
+        <Style x:Key="GlassInput" TargetType="TextBox">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border"
+                                Background="#12FFFFFF"
+                                BorderBrush="#22FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="14,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#80B3D9F7"/>
+                                <Setter TargetName="border" Property="Background" Value="#1AFFFFFF"/>
+                                <Setter TargetName="border" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#6399EDFF" BlurRadius="12" ShadowDepth="0" Opacity="0.5"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-        <TextBlock Text="Username" FontWeight="SemiBold" Margin="0,0,0,4"/>
-        <TextBox x:Name="UsernameBox" Padding="6,4" Margin="0,0,0,12"/>
+        <Style x:Key="GlassPasswordBox" TargetType="PasswordBox">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="border"
+                                Background="#12FFFFFF"
+                                BorderBrush="#22FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="12">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="14,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#80B3D9F7"/>
+                                <Setter TargetName="border" Property="Background" Value="#1AFFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
-        <TextBlock Text="Password" FontWeight="SemiBold" Margin="0,0,0,4"/>
-        <PasswordBox x:Name="PasswordBox" Padding="6,4" Margin="0,0,0,16"
-                     KeyDown="PasswordBox_KeyDown"/>
+    <!-- Deep navy gradient background -->
+    <Grid>
+        <Rectangle>
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#0A1628" Offset="0"/>
+                    <GradientStop Color="#0D2246" Offset="0.4"/>
+                    <GradientStop Color="#0A2A5E" Offset="0.7"/>
+                    <GradientStop Color="#081830" Offset="1"/>
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
 
-        <TextBlock x:Name="ErrorText" Foreground="Red" Margin="0,0,0,8"
-                   Visibility="Collapsed"/>
+        <!-- Glowing orbs -->
+        <Ellipse Width="500" Height="500" HorizontalAlignment="Left"
+                 VerticalAlignment="Top" Margin="-150,-150,0,0">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#403B82F6" Offset="0"/>
+                    <GradientStop Color="#003B82F6" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+            <Ellipse.Effect>
+                <BlurEffect Radius="60"/>
+            </Ellipse.Effect>
+        </Ellipse>
 
-        <Button Content="Login" Height="36" FontSize="14"
-                Click="LoginButton_Click"/>
-    </StackPanel>
+        <Ellipse Width="400" Height="400" HorizontalAlignment="Right"
+                 VerticalAlignment="Bottom" Margin="0,0,-100,-100">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#356366F1" Offset="0"/>
+                    <GradientStop Color="#006366F1" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+            <Ellipse.Effect>
+                <BlurEffect Radius="50"/>
+            </Ellipse.Effect>
+        </Ellipse>
+
+        <Ellipse Width="300" Height="300" HorizontalAlignment="Center"
+                 VerticalAlignment="Center" Margin="100,0,0,0">
+            <Ellipse.Fill>
+                <RadialGradientBrush>
+                    <GradientStop Color="#2510B981" Offset="0"/>
+                    <GradientStop Color="#0010B981" Offset="1"/>
+                </RadialGradientBrush>
+            </Ellipse.Fill>
+            <Ellipse.Effect>
+                <BlurEffect Radius="40"/>
+            </Ellipse.Effect>
+        </Ellipse>
+
+        <!-- Glass card centered -->
+        <Border Width="420" HorizontalAlignment="Center" VerticalAlignment="Center"
+                CornerRadius="24" Padding="40,36"
+                Background="#11FFFFFF"
+                BorderBrush="#22FFFFFF" BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" BlurRadius="60"
+                                  ShadowDepth="0" Opacity="0.4"/>
+            </Border.Effect>
+
+            <StackPanel>
+                <!-- Logo -->
+                <Border Width="64" Height="64" CornerRadius="32"
+                        Background="#18FFFFFF" BorderBrush="#25FFFFFF"
+                        BorderThickness="1" HorizontalAlignment="Center"
+                        Margin="0,0,0,16">
+                    <TextBlock Text="🏛️" FontSize="28"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <TextBlock Text="LLOIS" Foreground="White" FontSize="24"
+                           FontWeight="Bold" HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="Local Legislative Ordinance Information System"
+                           Foreground="#80FFFFFF" FontSize="12"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                <!-- Status pill -->
+                <Border CornerRadius="20" Background="#12FFFFFF"
+                        BorderBrush="#1AFFFFFF" BorderThickness="1"
+                        Padding="12,5" HorizontalAlignment="Center"
+                        Margin="0,0,0,28">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="7" Height="7" Fill="#34D399"
+                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="System online — Secure portal"
+                                   Foreground="#80FFFFFF" FontSize="11"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Error banner -->
+                <Border x:Name="ErrorBanner" CornerRadius="10"
+                        Background="#26EF4444" BorderBrush="#40EF4444"
+                        BorderThickness="1" Padding="12,10"
+                        Margin="0,0,0,16" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚠ " Foreground="#FCA5A5" FontSize="13"/>
+                        <TextBlock x:Name="ErrorText" Foreground="#FCA5A5"
+                                   FontSize="13" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Username -->
+                <TextBlock Text="USERNAME" Foreground="#60FFFFFF"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,6"/>
+                <TextBox x:Name="UsernameBox" Style="{StaticResource GlassInput}"
+                         Margin="0,0,0,16"
+                         KeyDown="Field_KeyDown"/>
+
+                <!-- Password -->
+                <TextBlock Text="PASSWORD" Foreground="#60FFFFFF"
+                           FontSize="11" FontWeight="SemiBold"
+                           Margin="0,0,0,6"/>
+                <PasswordBox x:Name="PasswordBox"
+                             Style="{StaticResource GlassPasswordBox}"
+                             Margin="0,0,0,24"
+                             KeyDown="Field_KeyDown"/>
+
+                <!-- Sign in button -->
+                <Button x:Name="LoginButton" Height="46"
+                        Click="LoginButton_Click"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" CornerRadius="12">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#3B82F6" Offset="0"/>
+                                        <GradientStop Color="#6366F1" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="RenderTransform">
+                                        <Setter.Value>
+                                            <ScaleTransform ScaleX="0.98" ScaleY="0.98" CenterX="210" CenterY="23"/>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <TextBlock Text="Sign in →" Foreground="White"
+                               FontSize="15" FontWeight="SemiBold"/>
+                </Button>
+
+                <!-- Footer -->
+                <TextBlock Text="© 2024 Local Government Unit — All rights reserved"
+                           Foreground="#35FFFFFF" FontSize="11"
+                           HorizontalAlignment="Center" Margin="0,20,0,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Window>

@@ -23,21 +23,33 @@ public partial class LoginWindow : Window
 
     private void TryLogin()
     {
-        var user = _auth.Login(UsernameBox.Text.Trim(), PasswordBox.Password);
+        string username = UsernameBox.Text.Trim();
+        string password = PasswordBox.Password;
+
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            ErrorText.Text = "Please fill in all fields.";
+            ErrorBanner.Visibility = Visibility.Visible;
+            return;
+        }
+
+        var user = _auth.Login(username, password);
 
         if (user is null)
         {
             ErrorText.Text = "Invalid username or password.";
-            ErrorText.Visibility = Visibility.Visible;
+            ErrorBanner.Visibility = Visibility.Visible;
             return;
         }
 
         LoggedInUser = user;
+        ErrorBanner.Visibility = Visibility.Collapsed;
         DialogResult = true;
     }
 
     private void LoginButton_Click(object sender, RoutedEventArgs e) => TryLogin();
-    private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+
+    private void Field_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter) TryLogin();
     }
