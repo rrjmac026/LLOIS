@@ -4,6 +4,7 @@ using System.Text;
 
 namespace LLOIS.Views;
 
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,11 +24,12 @@ public partial class LoginView : UserControl
     {
         InitializeComponent();
         _db = new AppDbContext();
-        DbSeeder.Seed(_db);
+        // Run seed on background thread so UI doesn't freeze on startup
+        Task.Run(() => DbSeeder.Seed(_db));
         _auth = new AuthService(new UserRepository(_db), _db);
     }
 
-    private void TryLogin()
+    private async void TryLogin()
     {
         string username = UsernameBox.Text.Trim();
         string password = PasswordBox.Password;
@@ -39,7 +41,13 @@ public partial class LoginView : UserControl
             return;
         }
 
-        var user = _auth.Login(username, password);
+        // Disable button to prevent double-clicks during async op
+        LoginButton.IsEnabled = false;
+        ErrorBanner.Visibility = Visibility.Collapsed;
+
+        var user = await Task.Run(() => _auth.Login(username, password));
+
+        LoginButton.IsEnabled = true;
 
         if (user is null)
         {
@@ -48,7 +56,6 @@ public partial class LoginView : UserControl
             return;
         }
 
-        ErrorBanner.Visibility = Visibility.Collapsed;
         LoginSucceeded?.Invoke(user, _db);
     }
 
