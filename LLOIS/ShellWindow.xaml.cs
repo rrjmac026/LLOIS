@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace LLOIS;
+﻿namespace LLOIS;
 
 using System.Threading.Tasks;
 using System.Windows;
@@ -31,27 +27,32 @@ public partial class ShellWindow : Window
     private async void OnLoginSucceeded(User user, AppDbContext db)
     {
         _db = db;
-
-        // Pre-warm EF Core connection pool on background thread
-        // so MainView loads instantly when it hits the DB
-        await Task.Run(() =>
-        {
-            using var ctx = new AppDbContext();
-            ctx.Database.EnsureCreated();
-        });
-
+        // Load ordinances on background thread while fade plays
         var mainView = new MainView(user, db);
         mainView.LogoutRequested += OnLogoutRequested;
         Title = $"LLOIS — {user.Username} ({user.Role})";
         FadeTo(mainView);
+        // Trigger data load after fade starts, not before
+        await Task.Delay(50); // let the fade frame render first
+        mainView.PreloadData();
     }
 
-    private void OnLogoutRequested()
+    private async void OnLogoutRequested()
     {
-        _db?.Dispose();
+        // Start the fade immediately, dispose db after
+        var db = _db;
         _db = null;
         Title = "LLOIS - Local Legislative Ordinance Information System";
-        ShowLogin();
+
+        // Build new LoginView before fade so it's ready
+        var loginView = new LoginView();
+        loginView.LoginSucceeded += OnLoginSucceeded;
+
+        FadeTo(loginView);
+
+        // Dispose old db after transition completes
+        await Task.Delay(300);
+        db?.Dispose();
     }
 
     private void FadeTo(UIElement newView)

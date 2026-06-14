@@ -36,6 +36,15 @@ public partial class MainView : UserControl
         Loaded += OnLoaded;
     }
 
+    public void PreloadData()
+    {
+        // Called by ShellWindow after fade starts
+        // OnLoaded fires naturally, but this ensures it runs
+        if (IsLoaded)
+            LoadOrdinances();
+        // else Loaded event will call it anyway via OnLoaded
+    }
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         UserLabel.Text = $"{_currentUser.Username} · {_currentUser.Role}";
