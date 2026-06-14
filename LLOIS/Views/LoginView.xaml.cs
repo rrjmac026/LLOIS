@@ -23,10 +23,13 @@ public partial class LoginView : UserControl
     public LoginView()
     {
         InitializeComponent();
-        _db = new AppDbContext();
-        // Run seed on background thread so UI doesn't freeze on startup
-        Task.Run(() => DbSeeder.Seed(_db));
-        _auth = new AuthService(new UserRepository(_db), _db);
+        _factory = new SimpleDbContextFactory();
+        Task.Run(() =>
+        {
+            using var db = _factory.CreateDbContext();
+            DbSeeder.Seed(db);
+        });
+        _auth = new AuthService(new UserRepository(_factory), _factory);
     }
 
     private async void TryLogin()
@@ -56,7 +59,7 @@ public partial class LoginView : UserControl
             return;
         }
 
-        LoginSucceeded?.Invoke(user, _db);
+        LoginSucceeded?.Invoke(user, _factory);
     }
 
     private void LoginButton_Click(object sender, RoutedEventArgs e) => TryLogin();

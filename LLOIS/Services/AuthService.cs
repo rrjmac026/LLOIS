@@ -1,11 +1,12 @@
 namespace LLOIS.Services;
 
 using BCrypt.Net;
+using Microsoft.EntityFrameworkCore;
 using LLOIS.Data;
 using LLOIS.Models;
 using LLOIS.Repositories;
 
-public class AuthService(IUserRepository userRepo, AppDbContext db) : IAuthService
+public class AuthService(IUserRepository userRepo, IDbContextFactory<AppDbContext> dbFactory) : IAuthService
 {
     public User? Login(string username, string password)
     {
@@ -16,6 +17,7 @@ public class AuthService(IUserRepository userRepo, AppDbContext db) : IAuthServi
 
     public void LogAction(User user, string action, string details)
     {
+        using var db = dbFactory.CreateDbContext();
         db.AuditLogs.Add(new AuditLog
         {
             UserId = user.Id,
@@ -30,6 +32,7 @@ public class AuthService(IUserRepository userRepo, AppDbContext db) : IAuthServi
 
     public void CreateUser(string username, string password, UserRole role)
     {
+        using var db = dbFactory.CreateDbContext();
         if (db.Users.Any(u => u.Username == username))
             throw new InvalidOperationException($"Username '{username}' already exists.");
 
@@ -44,20 +47,25 @@ public class AuthService(IUserRepository userRepo, AppDbContext db) : IAuthServi
 
     public void ResetPassword(int userId, string newPassword)
     {
+        using var db = dbFactory.CreateDbContext();
         var user = db.Users.Find(userId)
             ?? throw new InvalidOperationException("User not found.");
         user.PasswordHash = BCrypt.HashPassword(newPassword);
-        userRepo.Update(user);
+        db.SaveChanges();
     }
 
     public void SetActiveStatus(int userId, bool isActive)
     {
+        using var db = dbFactory.CreateDbContext();
         var user = db.Users.Find(userId)
             ?? throw new InvalidOperationException("User not found.");
         user.IsActive = isActive;
-        userRepo.Update(user);
+        db.SaveChanges();
     }
 
-    public IEnumerable<AuditLog> GetRecentLogs(int count = 200) =>
-        db.AuditLogs.OrderByDescending(l => l.Timestamp).Take(count).ToList();
+    public IEnumerable<AuditLog> GetRecentLogs(int count = 200)
+    {
+        using var db = dbFactory.CreateDbContext();
+        return db.AuditLogs.OrderByDescending(l => l.Timestamp).Take(count).ToList();
+    }
 }

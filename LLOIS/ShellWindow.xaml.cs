@@ -24,16 +24,12 @@ public partial class ShellWindow : Window
         FadeTo(loginView);
     }
 
-    private async void OnLoginSucceeded(User user, AppDbContext db)
+    private void OnLoginSucceeded(User user, SimpleDbContextFactory factory)
     {
-        _db = db;
-        // Load ordinances on background thread while fade plays
-        var mainView = new MainView(user, db);
+        var mainView = new MainView(user, factory);
         mainView.LogoutRequested += OnLogoutRequested;
         Title = $"LLOIS — {user.Username} ({user.Role})";
         FadeTo(mainView);
-        // Trigger data load after fade starts, not before
-        await Task.Delay(50); // let the fade frame render first
         mainView.PreloadData();
     }
 

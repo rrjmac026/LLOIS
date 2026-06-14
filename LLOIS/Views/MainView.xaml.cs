@@ -23,13 +23,12 @@ public partial class MainView : UserControl
 
     public event Action? LogoutRequested;
 
-    public MainView(User user, AppDbContext db)
+    public MainView(User user, SimpleDbContextFactory dbFactory)
     {
         InitializeComponent();
         _currentUser = user;
-        _dbFactory = dbFactory;
-        _service = new OrdinanceService(new OrdinanceRepository(_dbFactory));
-        _auth = new AuthService(new UserRepository(_dbFactory), new UserRepository(_dbFactory).GetDbFactory());
+        _service = new OrdinanceService(new OrdinanceRepository(dbFactory));
+        _auth = new AuthService(new UserRepository(dbFactory), dbFactory);
         Loaded += OnLoaded;
     }
 
