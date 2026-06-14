@@ -57,22 +57,6 @@ public partial class ShellWindow : Window
 
     private void FadeTo(UIElement newView)
     {
-        var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(150));
-        var fadeIn  = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200));
-
-        if (ViewHost.Content is UIElement current)
-        {
-            fadeOut.Completed += (_, _) =>
-            {
-                ViewHost.Content = newView;
-                newView.BeginAnimation(OpacityProperty, fadeIn);
-            };
-            current.BeginAnimation(OpacityProperty, fadeOut);
-        }
-        else
-        {
-            ViewHost.Content = newView;
-            newView.BeginAnimation(OpacityProperty, fadeIn);
-        }
+        ViewHost.Content = newView;
     }
 }

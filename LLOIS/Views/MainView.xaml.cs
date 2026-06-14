@@ -10,12 +10,13 @@ using LLOIS.Data;
 using LLOIS.Models;
 using LLOIS.Repositories;
 using LLOIS.Services;
+using Microsoft.EntityFrameworkCore;
 
 public partial class MainView : UserControl
 {
     private readonly IOrdinanceService _service;
     private readonly IAuthService _auth;
-    private readonly AppDbContext _db;
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly User _currentUser;
     private string _searchQuery = string.Empty;
     private Ordinance? _selectedOrdinance;
@@ -26,9 +27,9 @@ public partial class MainView : UserControl
     {
         InitializeComponent();
         _currentUser = user;
-        _db = db;
-        _service = new OrdinanceService(new OrdinanceRepository(_db));
-        _auth = new AuthService(new UserRepository(_db), _db);
+        _dbFactory = dbFactory;
+        _service = new OrdinanceService(new OrdinanceRepository(_dbFactory));
+        _auth = new AuthService(new UserRepository(_dbFactory), new UserRepository(_dbFactory).GetDbFactory());
         Loaded += OnLoaded;
     }
 
