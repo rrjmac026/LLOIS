@@ -3,12 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="LLOIS - Local Legislative Ordinance Information System"
         WindowState="Maximized"
-        WindowStyle="None"
-        AllowsTransparency="True"
-        Background="Transparent">
+        Background="White">
 
     <Window.Resources>
-        <!-- Fade transition style -->
         <Style x:Key="FadeContent" TargetType="ContentControl">
             <Setter Property="Template">
                 <Setter.Value>
