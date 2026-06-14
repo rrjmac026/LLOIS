@@ -9,11 +9,18 @@ using LLOIS.Models;
 
 public class AppDbContext : DbContext
 {
+    public AppDbContext() { }  // optional, for migrations
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
     public DbSet<Ordinance> Ordinances => Set<Ordinance>();
     public DbSet<OrdinanceVersion> OrdinanceVersions => Set<OrdinanceVersion>();
     public DbSet<User> Users => Set<User>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
-    protected override void OnConfiguring(DbContextOptionsBuilder options) =>
-        options.UseSqlite("Data Source=llois.db");
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        if (!options.IsConfigured)
+            options.UseSqlite("Data Source=llois.db");
+    }
 }

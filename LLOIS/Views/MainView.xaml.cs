@@ -16,7 +16,6 @@ public partial class MainView : UserControl
 {
     private readonly IOrdinanceService _service;
     private readonly IAuthService _auth;
-    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly User _currentUser;
     private string _searchQuery = string.Empty;
     private Ordinance? _selectedOrdinance;
