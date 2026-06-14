@@ -16,9 +16,9 @@ using LLOIS.Services;
 public partial class LoginView : UserControl
 {
     private readonly IAuthService _auth;
-    private readonly AppDbContext _db;
+    private readonly SimpleDbContextFactory _factory;
 
-    public event Action<User, AppDbContext>? LoginSucceeded;
+    public event Action<User, SimpleDbContextFactory>? LoginSucceeded;
 
     public LoginView()
     {
@@ -44,7 +44,6 @@ public partial class LoginView : UserControl
             return;
         }
 
-        // Disable button to prevent double-clicks during async op
         LoginButton.IsEnabled = false;
         ErrorBanner.Visibility = Visibility.Collapsed;
 
