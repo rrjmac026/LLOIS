@@ -9,16 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Page Remove="ShellWindow.xaml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="ShellWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="ClosedXML" Version="0.104.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />

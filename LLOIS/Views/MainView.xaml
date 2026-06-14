@@ -1,43 +1,38 @@
-<Window x:Class="LLOIS.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:LLOIS"
-        Title="LLOIS - Local Legislative Ordinance Information System"
-        Height="660" Width="1050" MinHeight="520" MinWidth="800" 
-        WindowState="Maximized" Loaded="Window_Loaded">
+﻿<UserControl x:Class="LLOIS.Views.MainView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LLOIS">
 
-    <Window.Resources>
+    <UserControl.Resources>
         <local:NullToVisibilityConverter x:Key="NullToVisibility"/>
         <Style x:Key="ToolBtn" TargetType="Button">
             <Setter Property="Padding" Value="10,5"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>
-    </Window.Resources>
+    </UserControl.Resources>
 
+    <!-- Everything inside your current MainWindow DockPanel goes here unchanged -->
     <DockPanel>
-
-        <!-- Top Bar: Title + Menu -->
+        <!-- Top Bar -->
         <Border DockPanel.Dock="Top" Background="#1a3a6b" Padding="14,10">
             <DockPanel>
-                <!-- Right: Admin tools -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button x:Name="UsersBtn" Content="👥 Users" Style="{StaticResource ToolBtn}"
                             Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
-                            Click="UsersBtn_Click" Visibility="Collapsed" ToolTip="Manage users"/>
+                            Click="UsersBtn_Click" Visibility="Collapsed"/>
                     <Button x:Name="AuditBtn" Content="🔍 Audit Log" Style="{StaticResource ToolBtn}"
                             Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
-                            Click="AuditBtn_Click" Visibility="Collapsed" ToolTip="View audit log"/>
+                            Click="AuditBtn_Click" Visibility="Collapsed"/>
                     <Button Content="📊 Reports" Style="{StaticResource ToolBtn}"
                             Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
-                            Click="ReportsBtn_Click" ToolTip="Open reports window"/>
+                            Click="ReportsBtn_Click"/>
                     <Button Content="🚪 Logout" Style="{StaticResource ToolBtn}"
                             Background="#8b1a1a" Foreground="White" BorderBrush="#aa3333"
-                            Click="LogoutBtn_Click" ToolTip="Log out" Margin="10,0,0,0"/>
+                            Click="LogoutBtn_Click" Margin="10,0,0,0"/>
                     <TextBlock x:Name="UserLabel" Foreground="#AACCFF"
                                VerticalAlignment="Center" FontSize="12" Margin="8,0,0,0"/>
                 </StackPanel>
-
                 <TextBlock Text="🏛️ Local Legislative Ordinance Information System"
                            Foreground="White" FontSize="16" FontWeight="Bold"
                            VerticalAlignment="Center"/>
@@ -48,19 +43,16 @@
         <Border DockPanel.Dock="Top" Background="#F0F4FF" Padding="12,8"
                 BorderBrush="#DDEEFF" BorderThickness="0,0,0,1">
             <DockPanel>
-                <!-- Add button (encoder/admin only) -->
                 <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="➕ Add Ordinance"
                         Width="130" Margin="8,0,0,0" FontWeight="SemiBold"
                         Background="#1a7a3a" Foreground="White"
                         Click="AddBtn_Click" Visibility="Collapsed"/>
-
                 <StackPanel Orientation="Horizontal">
                     <TextBox x:Name="SearchBox" Width="280" FontSize="13" Padding="6,4"
                              KeyDown="SearchBox_KeyDown"
                              Text="Search by ID, title, subject, sponsor..."/>
                     <Button Content="Search" Width="75" Margin="6,0,10,0"
                             Click="SearchButton_Click"/>
-
                     <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
                     <ComboBox x:Name="StatusFilter" Width="120" SelectionChanged="StatusFilter_Changed">
                         <ComboBoxItem Content="All" IsSelected="True"/>
@@ -74,18 +66,16 @@
             </DockPanel>
         </Border>
 
-        <!-- Main Content -->
+        <!-- Main Content (identical to your current MainWindow grid) -->
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="270"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left: List -->
             <DockPanel Grid.Column="0" Margin="8,8,4,8">
                 <TextBlock DockPanel.Dock="Top" x:Name="ResultCount"
-                           Text="All ordinances" FontSize="11"
-                           Foreground="Gray" Margin="0,0,0,4"/>
+                           Text="All ordinances" FontSize="11" Foreground="Gray" Margin="0,0,0,4"/>
                 <ListBox x:Name="OrdinanceList"
                          SelectionChanged="OrdinanceList_SelectionChanged"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -94,11 +84,9 @@
                             <StackPanel Margin="4,3">
                                 <TextBlock Text="{Binding OrdinanceNumber}"
                                            FontWeight="SemiBold" FontSize="12"/>
-                                <TextBlock Text="{Binding Title}" FontSize="11"
-                                           TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Title}" FontSize="11" TextWrapping="Wrap"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                    <TextBlock Text="{Binding Status}" FontSize="10"
-                                               Foreground="SteelBlue"/>
+                                    <TextBlock Text="{Binding Status}" FontSize="10" Foreground="SteelBlue"/>
                                     <TextBlock Text=" · " FontSize="10" Foreground="Gray"/>
                                     <TextBlock Text="{Binding Type}" FontSize="10" Foreground="Gray"/>
                                 </StackPanel>
@@ -108,10 +96,7 @@
                 </ListBox>
             </DockPanel>
 
-            <!-- Right: Detail Panel -->
             <DockPanel Grid.Column="1" Margin="4,8,8,8">
-
-                <!-- Action Buttons for selected ordinance -->
                 <Border DockPanel.Dock="Top" x:Name="ActionBar"
                         Background="#F8F8F8" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1"
                         Padding="8,6" Margin="0,0,0,8" Visibility="Collapsed">
@@ -133,8 +118,6 @@
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel x:Name="DetailPanel" Visibility="Collapsed">
-
-                        <!-- Ordinance Header -->
                         <Border Background="#F0F4FF" CornerRadius="6" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <TextBlock x:Name="DetailId" FontSize="12" Foreground="Gray"/>
@@ -147,38 +130,29 @@
                                     <TextBlock x:Name="DetailSeries" FontSize="12"
                                                Foreground="Gray" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                 </StackPanel>
-
-                                <!-- Relationship Badges -->
                                 <StackPanel x:Name="RelationshipPanel" Orientation="Horizontal"
                                             Margin="0,6,0,0" Visibility="Collapsed">
                                     <Border x:Name="AmendsPanel" Background="#FFF8E0"
-                                            CornerRadius="4" Padding="8,3" Margin="0,0,6,0"
-                                            Visibility="Collapsed">
+                                            CornerRadius="4" Padding="8,3" Margin="0,0,6,0" Visibility="Collapsed">
                                         <TextBlock x:Name="AmendsLabel" FontSize="11" Foreground="#7a4b00"/>
                                     </Border>
                                     <Border x:Name="SupersedesPanel" Background="#E8F0FF"
-                                            CornerRadius="4" Padding="8,3" Margin="0,0,6,0"
-                                            Visibility="Collapsed">
+                                            CornerRadius="4" Padding="8,3" Margin="0,0,6,0" Visibility="Collapsed">
                                         <TextBlock x:Name="SupersedesLabel" FontSize="11" Foreground="#1a3a6b"/>
                                     </Border>
                                     <Border x:Name="RepealedByPanel" Background="#FFF0F0"
-                                            CornerRadius="4" Padding="8,3"
-                                            Visibility="Collapsed">
+                                            CornerRadius="4" Padding="8,3" Visibility="Collapsed">
                                         <TextBlock x:Name="RepealedByLabel" FontSize="11" Foreground="#8b1a1a"/>
                                     </Border>
                                 </StackPanel>
-
-                                <!-- PDF indicator -->
                                 <Border x:Name="PdfBadge" Background="#E8FFE8" CornerRadius="4"
                                         Padding="8,3" Margin="0,6,0,0" HorizontalAlignment="Left"
                                         Visibility="Collapsed">
-                                    <TextBlock Text="📎 PDF document attached" FontSize="11"
-                                               Foreground="#1a7a3a"/>
+                                    <TextBlock Text="📎 PDF document attached" FontSize="11" Foreground="#1a7a3a"/>
                                 </Border>
                             </StackPanel>
                         </Border>
 
-                        <!-- Metadata -->
                         <TextBlock Text="📋 Metadata" FontSize="13" FontWeight="Bold" Margin="0,0,0,6"/>
                         <Border BorderBrush="#CCDDFF" BorderThickness="1"
                                 CornerRadius="6" Padding="12" Margin="0,0,0,12">
@@ -192,7 +166,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- Latest Version -->
                         <TextBlock Text="📄 Current / Latest Version" FontSize="13"
                                    FontWeight="Bold" Margin="0,0,0,6"/>
                         <Border BorderBrush="#CCDDFF" BorderThickness="1"
@@ -200,7 +173,6 @@
                             <StackPanel x:Name="LatestVersionPanel"/>
                         </Border>
 
-                        <!-- Version History -->
                         <TextBlock x:Name="HistoryHeader" Text="🕓 Version History"
                                    FontSize="13" FontWeight="Bold" Margin="0,0,0,6"/>
                         <ItemsControl x:Name="VersionHistoryList">
@@ -224,8 +196,8 @@
                                             <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
                                                        Foreground="Gray" FontSize="11" Margin="0,3,0,0"/>
                                             <TextBlock Text="{Binding AmendmentNotes}" TextWrapping="Wrap"
-                                                       Foreground="#CC6600" FontStyle="Italic"
-                                                       FontSize="11" Margin="0,3,0,0"
+                                                       Foreground="#CC6600" FontStyle="Italic" FontSize="11"
+                                                       Margin="0,3,0,0"
                                                        Visibility="{Binding AmendmentNotes,
                                                            Converter={StaticResource NullToVisibility}}"/>
                                         </StackPanel>
@@ -233,10 +205,9 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>
         </Grid>
     </DockPanel>
-</Window>
+</UserControl>
