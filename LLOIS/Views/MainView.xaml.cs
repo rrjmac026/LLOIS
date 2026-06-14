@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace LLOIS.Views;
+﻿namespace LLOIS.Views;
 
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,20 +29,15 @@ public partial class MainView : UserControl
         _db = db;
         _service = new OrdinanceService(new OrdinanceRepository(_db));
         _auth = new AuthService(new UserRepository(_db), _db);
-
         Loaded += OnLoaded;
     }
 
     public void PreloadData()
     {
-        // Called by ShellWindow after fade starts
-        // OnLoaded fires naturally, but this ensures it runs
-        if (IsLoaded)
-            LoadOrdinances();
-        // else Loaded event will call it anyway via OnLoaded
+        if (IsLoaded) _ = LoadOrdinancesAsync();
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs e)
+    private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         UserLabel.Text = $"{_currentUser.Username} · {_currentUser.Role}";
 
@@ -56,19 +48,22 @@ public partial class MainView : UserControl
         UsersBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
         AuditBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
 
-        LoadOrdinances();
+        await LoadOrdinancesAsync();
     }
 
-    private void LoadOrdinances()
+    private async Task LoadOrdinancesAsync()
     {
         try
         {
-            var results = _service.Search(_searchQuery).ToList();
+            // Run DB query on background thread
+            var query   = _searchQuery;
+            var results = await Task.Run(() => _service.Search(query).ToList());
 
             if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status } && status != "All"
                 && Enum.TryParse<OrdinanceStatus>(status.Replace(" ", ""), out var parsed))
                 results = results.Where(o => o.Status == parsed).ToList();
 
+            // Back on UI thread to update controls
             OrdinanceList.ItemsSource = results;
             ResultCount.Text = $"{results.Count} ordinance(s) found";
             ClearDetail();
@@ -80,11 +75,11 @@ public partial class MainView : UserControl
         }
     }
 
-    private void SearchButton_Click(object sender, RoutedEventArgs e)
+    private async void SearchButton_Click(object sender, RoutedEventArgs e)
     {
         _searchQuery = SearchBox.Text.Trim();
         if (_searchQuery == "Search by ID, title, subject, sponsor...") _searchQuery = "";
-        LoadOrdinances();
+        await LoadOrdinancesAsync();
     }
 
     private void SearchBox_KeyDown(object sender, KeyEventArgs e)
@@ -92,19 +87,25 @@ public partial class MainView : UserControl
         if (e.Key == Key.Enter) SearchButton_Click(sender, e);
     }
 
-    private void StatusFilter_Changed(object sender, SelectionChangedEventArgs e)
+    private async void StatusFilter_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_service is null) return;
-        LoadOrdinances();
+        await LoadOrdinancesAsync();
     }
 
-    private void OrdinanceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void OrdinanceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (OrdinanceList.SelectedItem is not Ordinance o) return;
-        var detail = _service.GetDetails(o.OrdinanceNumber);
+
+        // Load details on background thread
+        var detail = await Task.Run(() => _service.GetDetails(o.OrdinanceNumber));
         if (detail is null) return;
         _selectedOrdinance = detail;
         ShowDetail(detail);
+
+        // Log async, fire-and-forget so it doesn't block UI
+        _ = Task.Run(() => _auth.LogAction(_currentUser, "VIEW",
+            $"Viewed ordinance {o.OrdinanceNumber}"));
     }
 
     private void AddBtn_Click(object sender, RoutedEventArgs e)
@@ -113,14 +114,15 @@ public partial class MainView : UserControl
         var dlg = new AddEditOrdinanceWindow(_service) { Owner = win };
         if (dlg.ShowDialog() == true)
         {
-            _auth.LogAction(_currentUser, "ADD", $"Added ordinance {dlg.SavedOrdinance?.OrdinanceNumber}");
-            LoadOrdinances();
+            _ = Task.Run(() => _auth.LogAction(_currentUser, "ADD",
+                $"Added ordinance {dlg.SavedOrdinance?.OrdinanceNumber}"));
+            _ = LoadOrdinancesAsync();
             MessageBox.Show("Ordinance added successfully.", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
-    private void EditBtn_Click(object sender, RoutedEventArgs e)
+    private async void EditBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance is null) return;
         var win = Window.GetWindow(this);
@@ -128,14 +130,14 @@ public partial class MainView : UserControl
         if (dlg.ShowDialog() == true)
         {
             var num = _selectedOrdinance.OrdinanceNumber;
-            _auth.LogAction(_currentUser, "EDIT", $"Edited ordinance {num}");
-            LoadOrdinances();
-            var updated = _service.GetDetails(num);
+            _ = Task.Run(() => _auth.LogAction(_currentUser, "EDIT", $"Edited ordinance {num}"));
+            await LoadOrdinancesAsync();
+            var updated = await Task.Run(() => _service.GetDetails(num));
             if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
 
-    private void AmendBtn_Click(object sender, RoutedEventArgs e)
+    private async void AmendBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance is null) return;
         var win = Window.GetWindow(this);
@@ -143,9 +145,9 @@ public partial class MainView : UserControl
         if (dlg.ShowDialog() == true)
         {
             var num = _selectedOrdinance.OrdinanceNumber;
-            _auth.LogAction(_currentUser, "AMEND", $"Added amendment to {num}");
-            LoadOrdinances();
-            var updated = _service.GetDetails(num);
+            _ = Task.Run(() => _auth.LogAction(_currentUser, "AMEND", $"Added amendment to {num}"));
+            await LoadOrdinancesAsync();
+            var updated = await Task.Run(() => _service.GetDetails(num));
             if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
@@ -161,8 +163,10 @@ public partial class MainView : UserControl
         }
         try
         {
-            Process.Start(new ProcessStartInfo(_selectedOrdinance.DocumentPath) { UseShellExecute = true });
-            _auth.LogAction(_currentUser, "OPEN_PDF", $"Opened PDF for {_selectedOrdinance.OrdinanceNumber}");
+            Process.Start(new ProcessStartInfo(_selectedOrdinance.DocumentPath)
+                { UseShellExecute = true });
+            _ = Task.Run(() => _auth.LogAction(_currentUser, "OPEN_PDF",
+                $"Opened PDF for {_selectedOrdinance.OrdinanceNumber}"));
         }
         catch (Exception ex)
         {
@@ -171,7 +175,7 @@ public partial class MainView : UserControl
         }
     }
 
-    private void DeleteBtn_Click(object sender, RoutedEventArgs e)
+    private async void DeleteBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedOrdinance is null) return;
         var result = MessageBox.Show(
@@ -181,9 +185,10 @@ public partial class MainView : UserControl
         try
         {
             var num = _selectedOrdinance.OrdinanceNumber;
-            _service.Delete(num);
-            _auth.LogAction(_currentUser, "DELETE", $"Deleted ordinance {num}");
-            LoadOrdinances();
+            await Task.Run(() => _service.Delete(num));
+            _ = Task.Run(() => _auth.LogAction(_currentUser, "DELETE",
+                $"Deleted ordinance {num}"));
+            await LoadOrdinancesAsync();
         }
         catch (Exception ex)
         {
@@ -210,13 +215,16 @@ public partial class MainView : UserControl
         new AuditLogWindow(_auth) { Owner = win }.ShowDialog();
     }
 
-    private void LogoutBtn_Click(object sender, RoutedEventArgs e)
+    private async void LogoutBtn_Click(object sender, RoutedEventArgs e)
     {
         var result = MessageBox.Show("Are you sure you want to log out?",
             "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;
 
-        _auth.LogAction(_currentUser, "LOGOUT", $"{_currentUser.Username} logged out.");
+        // Log on background, don't wait — fire and invoke logout immediately
+        _ = Task.Run(() => _auth.LogAction(_currentUser, "LOGOUT",
+            $"{_currentUser.Username} logged out."));
+
         LogoutRequested?.Invoke();
     }
 
@@ -263,7 +271,8 @@ public partial class MainView : UserControl
         else RepealedByPanel.Visibility = Visibility.Collapsed;
 
         RelationshipPanel.Visibility = hasAny ? Visibility.Visible : Visibility.Collapsed;
-        PdfBadge.Visibility = !string.IsNullOrEmpty(o.DocumentPath) ? Visibility.Visible : Visibility.Collapsed;
+        PdfBadge.Visibility = !string.IsNullOrEmpty(o.DocumentPath)
+            ? Visibility.Visible : Visibility.Collapsed;
 
         MetaLeft.Children.Clear();
         MetaRight.Children.Clear();
@@ -278,18 +287,18 @@ public partial class MainView : UserControl
         if (o.LatestVersion is OrdinanceVersion latest)
         {
             LatestVersionPanel.Children.Add(MakeRow("Title",        latest.Title, bold: true));
-            LatestVersionPanel.Children.Add(MakeRow("Date Enacted", latest.DateEnacted.ToString("MMMM dd, yyyy")));
+            LatestVersionPanel.Children.Add(MakeRow("Date Enacted",
+                latest.DateEnacted.ToString("MMMM dd, yyyy")));
             LatestVersionPanel.Children.Add(MakeRow("Enacted By",   latest.EnactedBy));
             LatestVersionPanel.Children.Add(MakeRow("Content",      latest.Content));
             if (!string.IsNullOrEmpty(latest.AmendmentNotes))
-                LatestVersionPanel.Children.Add(MakeRow("Notes", latest.AmendmentNotes, color: "#CC6600"));
+                LatestVersionPanel.Children.Add(MakeRow("Notes", latest.AmendmentNotes,
+                    color: "#CC6600"));
         }
 
         var history = o.Versions.OrderBy(v => v.VersionNumber).SkipLast(1).ToList();
         HistoryHeader.Visibility       = history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         VersionHistoryList.ItemsSource = history;
-
-        _auth.LogAction(_currentUser, "VIEW", $"Viewed ordinance {o.OrdinanceNumber}");
     }
 
     private void ClearDetail()
@@ -302,7 +311,8 @@ public partial class MainView : UserControl
     private static StackPanel MakeRow(string label, string value,
         bool bold = false, string? color = null)
     {
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
+        var panel = new StackPanel
+            { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
         panel.Children.Add(new TextBlock
         {
             Text = label + ": ", FontWeight = FontWeights.SemiBold, FontSize = 12, MinWidth = 110
