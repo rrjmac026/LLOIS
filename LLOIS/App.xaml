@@ -255,7 +255,6 @@
             <Style TargetType="DataGridCell">
                 <Setter Property="Foreground"    Value="{DynamicResource TextPrimaryBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding"       Value="10,6"/>
             </Style>
 
             <!-- ── ScrollViewer ──────────────────────────────── -->

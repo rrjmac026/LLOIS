@@ -363,7 +363,7 @@
                                     </DockPanel>
                                 </Border>
                                 <!-- Version card body -->
-                                <StackPanel x:Name="LatestVersionPanel" Padding="14,12"/>
+                               <StackPanel x:Name="LatestVersionPanel" Margin="14,12"/>
                             </StackPanel>
                         </Border>
 
