@@ -23,39 +23,74 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             VerticalAlignment="Center">
 
-                    <!-- Theme toggle -->
-                    <Button x:Name="ThemeToggleBtn"
+                    <Button Content="📊 Reports"
                             Style="{StaticResource TopbarBtn}"
-                            ToolTip="Toggle light / dark mode"
-                            Click="ThemeToggleBtn_Click"
-                            Content="☀ Light"/>
-
+                            Click="ReportsBtn_Click"/>
                     <Button x:Name="UsersBtn" Content="👥 Users"
                             Style="{StaticResource TopbarBtn}"
                             Click="UsersBtn_Click" Visibility="Collapsed"/>
                     <Button x:Name="AuditBtn" Content="🔍 Audit Log"
                             Style="{StaticResource TopbarBtn}"
                             Click="AuditBtn_Click" Visibility="Collapsed"/>
-                    <Button Content="📊 Reports"
-                            Style="{StaticResource TopbarBtn}"
-                            Click="ReportsBtn_Click"/>
-                    <Button Content="🚪 Logout"
-                            Style="{StaticResource TopbarDangerBtn}"
-                            Click="LogoutBtn_Click" Margin="6,0,0,0"/>
 
-                    <!-- User chip: dot + name -->
+                    <!-- User dropdown chip -->
                     <Border CornerRadius="10"
                             Background="#18FFFFFF"
                             BorderBrush="#25FFFFFF"
                             BorderThickness="1"
-                            Padding="10,4" Margin="12,0,0,0">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Ellipse Width="7" Height="7" Fill="#4ADE80"
-                                     VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock x:Name="UserLabel"
-                                       Foreground="{DynamicResource TopbarUserFgBrush}"
-                                       FontSize="12" VerticalAlignment="Center"/>
-                        </StackPanel>
+                            Padding="0" Margin="12,0,0,0"
+                            Cursor="Hand">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick"
+                                        Command="{x:Static SystemCommands.MinimizeWindowCommand}"/>
+                        </Border.InputBindings>
+                        <Menu Background="Transparent" BorderThickness="0">
+                            <MenuItem Padding="10,4">
+                                <MenuItem.Header>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse Width="7" Height="7" Fill="#4ADE80"
+                                                VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="UserLabel"
+                                                Foreground="{DynamicResource TopbarUserFgBrush}"
+                                                FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text=" ▾"
+                                                Foreground="{DynamicResource TopbarUserFgBrush}"
+                                                FontSize="11" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </MenuItem.Header>
+
+                                <!-- Role + username info at the top -->
+                                <MenuItem IsEnabled="False" Padding="12,8">
+                                    <MenuItem.Header>
+                                        <StackPanel>
+                                            <TextBlock x:Name="DropdownNameLabel"
+                                                    FontSize="13" FontWeight="SemiBold"
+                                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock x:Name="DropdownRoleLabel"
+                                                    FontSize="11"
+                                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                                    Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
+
+                                <Separator/>
+
+                                <!-- Theme toggle -->
+                                <MenuItem x:Name="ThemeMenuItem"
+                                        Header="🌙 Dark Mode"
+                                        Click="ThemeToggleBtn_Click"
+                                        Padding="12,6"/>
+
+                                <Separator/>
+
+                                <!-- Logout -->
+                                <MenuItem Header="🚪 Logout"
+                                        Click="LogoutBtn_Click"
+                                        Padding="12,6"
+                                        Foreground="{DynamicResource DangerFgBrush}"/>
+                            </MenuItem>
+                        </Menu>
                     </Border>
                 </StackPanel>
 

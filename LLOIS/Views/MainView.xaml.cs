@@ -31,7 +31,7 @@ public partial class MainView : UserControl
 
         // Keep theme-toggle button label in sync
         ThemeService.ThemeChanged += dark =>
-            Dispatcher.Invoke(() => ThemeToggleBtn.Content = dark ? "☀ Light" : "🌙 Dark");
+            Dispatcher.Invoke(() => ThemeMenuItem.Header = dark ? "☀ Light Mode" : "🌙 Dark Mode");
     }
 
     public void PreloadData()
@@ -43,17 +43,20 @@ public partial class MainView : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        UserLabel.Text = $"{_currentUser.Username} · {_currentUser.Role}";
+        // Populate user chip + dropdown labels
+        UserLabel.Text          = _currentUser.Username;
+        DropdownNameLabel.Text  = _currentUser.Username;
+        DropdownRoleLabel.Text  = _currentUser.Role.ToString();
 
         bool isAdmin  = _currentUser.Role == UserRole.Admin;
         bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
 
-        AddBtn.Visibility   = canWrite ? Visibility.Visible    : Visibility.Collapsed;
-        UsersBtn.Visibility = isAdmin  ? Visibility.Visible    : Visibility.Collapsed;
-        AuditBtn.Visibility = isAdmin  ? Visibility.Visible    : Visibility.Collapsed;
+        AddBtn.Visibility   = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        UsersBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
+        AuditBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
 
-        // Sync theme button label on load
-        ThemeToggleBtn.Content = ThemeService.IsDark ? "☀ Light" : "🌙 Dark";
+        // Sync theme menu item label on load
+        ThemeMenuItem.Header = ThemeService.IsDark ? "☀ Light Mode" : "🌙 Dark Mode";
 
         await LoadOrdinancesAsync();
     }
@@ -63,8 +66,6 @@ public partial class MainView : UserControl
     private void ThemeToggleBtn_Click(object sender, RoutedEventArgs e)
     {
         ThemeService.Toggle();
-
-        // Re-render the currently selected ordinance so status badge colors update
         if (_selectedOrdinance is not null)
             ShowDetail(_selectedOrdinance);
     }
