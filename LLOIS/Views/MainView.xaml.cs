@@ -31,7 +31,7 @@ public partial class MainView : UserControl
 
         // Keep theme-toggle button label in sync
         ThemeService.ThemeChanged += dark =>
-            Dispatcher.Invoke(() => ThemeMenuItem.Header = dark ? "☀ Light Mode" : "🌙 Dark Mode");
+            Dispatcher.Invoke(() => ThemePopupBtn.Content = dark ? "☀ Light Mode" : "🌙 Dark Mode");
     }
 
     public void PreloadData()
@@ -39,14 +39,19 @@ public partial class MainView : UserControl
         if (IsLoaded) _ = LoadOrdinancesAsync();
     }
 
+    private void UserChipBtn_Click(object sender, RoutedEventArgs e)
+    {
+        UserPopup.IsOpen = !UserPopup.IsOpen;
+    }
+
     // ── Lifecycle ──────────────────────────────────────────────────────────
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Populate user chip + dropdown labels
-        UserLabel.Text          = _currentUser.Username;
-        DropdownNameLabel.Text  = _currentUser.Username;
-        DropdownRoleLabel.Text  = _currentUser.Role.ToString();
+        UserChipBtn.Tag      = _currentUser.Username;
+        DropdownNameLabel.Text = _currentUser.Username;
+        DropdownRoleLabel.Text = _currentUser.Role.ToString();
 
         bool isAdmin  = _currentUser.Role == UserRole.Admin;
         bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
@@ -56,7 +61,7 @@ public partial class MainView : UserControl
         AuditBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
 
         // Sync theme menu item label on load
-        ThemeMenuItem.Header = ThemeService.IsDark ? "☀ Light Mode" : "🌙 Dark Mode";
+        ThemePopupBtn.Content = ThemeService.IsDark ? "☀ Light Mode" : "🌙 Dark Mode";
 
         await LoadOrdinancesAsync();
     }
@@ -65,6 +70,7 @@ public partial class MainView : UserControl
 
     private void ThemeToggleBtn_Click(object sender, RoutedEventArgs e)
     {
+        UserPopup.IsOpen = false;
         ThemeService.Toggle();
         if (_selectedOrdinance is not null)
             ShowDetail(_selectedOrdinance);
@@ -232,6 +238,8 @@ public partial class MainView : UserControl
 
     private async void LogoutBtn_Click(object sender, RoutedEventArgs e)
     {
+        UserPopup.IsOpen = false;
+
         var result = MessageBox.Show("Are you sure you want to log out?",
             "Logout", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;

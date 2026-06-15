@@ -33,65 +33,150 @@
                             Style="{StaticResource TopbarBtn}"
                             Click="AuditBtn_Click" Visibility="Collapsed"/>
 
-                    <!-- User dropdown chip -->
-                    <Border CornerRadius="10"
-                            Background="#18FFFFFF"
-                            BorderBrush="#25FFFFFF"
-                            BorderThickness="1"
-                            Padding="0" Margin="12,0,0,0"
-                            Cursor="Hand">
-                        <Border.InputBindings>
-                            <MouseBinding MouseAction="LeftClick"
-                                        Command="{x:Static SystemCommands.MinimizeWindowCommand}"/>
-                        </Border.InputBindings>
-                        <Menu Background="Transparent" BorderThickness="0">
-                            <MenuItem Padding="10,4">
-                                <MenuItem.Header>
+                    <!-- User chip button that opens popup -->
+                    <Button x:Name="UserChipBtn"
+                            Margin="12,0,0,0"
+                            BorderThickness="0"
+                            Background="Transparent"
+                            Cursor="Hand"
+                            Click="UserChipBtn_Click">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ChipBd"
+                                        CornerRadius="10"
+                                        Background="#18FFFFFF"
+                                        BorderBrush="#25FFFFFF"
+                                        BorderThickness="1"
+                                        Padding="10,5">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Width="7" Height="7" Fill="#4ADE80"
                                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock x:Name="UserLabel"
+                                        <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource AncestorType=Button}}"
                                                 Foreground="{DynamicResource TopbarUserFgBrush}"
                                                 FontSize="12" VerticalAlignment="Center"/>
                                         <TextBlock Text=" ▾"
                                                 Foreground="{DynamicResource TopbarUserFgBrush}"
-                                                FontSize="11" VerticalAlignment="Center"/>
+                                                FontSize="10" VerticalAlignment="Center" Margin="2,0,0,0"/>
                                     </StackPanel>
-                                </MenuItem.Header>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ChipBd" Property="Background" Value="#28FFFFFF"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="ChipBd" Property="Background" Value="#35FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
-                                <!-- Role + username info at the top -->
-                                <MenuItem IsEnabled="False" Padding="12,8">
-                                    <MenuItem.Header>
-                                        <StackPanel>
-                                            <TextBlock x:Name="DropdownNameLabel"
-                                                    FontSize="13" FontWeight="SemiBold"
-                                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <TextBlock x:Name="DropdownRoleLabel"
-                                                    FontSize="11"
-                                                    Foreground="{DynamicResource TextSecondaryBrush}"
-                                                    Margin="0,2,0,0"/>
-                                        </StackPanel>
-                                    </MenuItem.Header>
-                                </MenuItem>
+                    <!-- Dropdown Popup -->
+                    <Popup x:Name="UserPopup"
+                        PlacementTarget="{Binding ElementName=UserChipBtn}"
+                        Placement="Bottom"
+                        StaysOpen="False"
+                        AllowsTransparency="True">
+                        <Border Background="{DynamicResource BgPrimaryBrush}"
+                                BorderBrush="{DynamicResource BorderThinBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="0,6"
+                                MinWidth="200"
+                                Margin="0,4,0,0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="4"
+                                                Color="#000000" Opacity="0.12"/>
+                            </Border.Effect>
+                            <StackPanel>
 
-                                <Separator/>
+                                <!-- User info header -->
+                                <StackPanel Margin="14,6,14,10">
+                                    <TextBlock x:Name="DropdownNameLabel"
+                                            FontSize="13" FontWeight="SemiBold"
+                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock x:Name="DropdownRoleLabel"
+                                            FontSize="11" Margin="0,2,0,0"
+                                            Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </StackPanel>
+
+                                <!-- Divider -->
+                                <Border Height="1" Background="{DynamicResource BorderThinBrush}"
+                                        Margin="0,0,0,6"/>
 
                                 <!-- Theme toggle -->
-                                <MenuItem x:Name="ThemeMenuItem"
-                                        Header="🌙 Dark Mode"
+                                <Button x:Name="ThemePopupBtn"
+                                        Content="🌙 Dark Mode"
                                         Click="ThemeToggleBtn_Click"
-                                        Padding="12,6"/>
+                                        HorizontalContentAlignment="Left"
+                                        Padding="14,8"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource TextPrimaryBrush}"
+                                        FontSize="13"
+                                        Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Left"
+                                                                VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource BgHoverBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource BgActiveBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
 
-                                <Separator/>
+                                <!-- Divider -->
+                                <Border Height="1" Background="{DynamicResource BorderThinBrush}"
+                                        Margin="0,6"/>
 
                                 <!-- Logout -->
-                                <MenuItem Header="🚪 Logout"
+                                <Button Content="🚪 Logout"
                                         Click="LogoutBtn_Click"
-                                        Padding="12,6"
-                                        Foreground="{DynamicResource DangerFgBrush}"/>
-                            </MenuItem>
-                        </Menu>
-                    </Border>
+                                        HorizontalContentAlignment="Left"
+                                        Padding="14,8"
+                                        BorderThickness="0"
+                                        Background="Transparent"
+                                        Foreground="{DynamicResource DangerFgBrush}"
+                                        FontSize="13"
+                                        Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Left"
+                                                                VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource DangerBgBrush}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource BgActiveBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
                 </StackPanel>
 
                 <!-- Title -->
