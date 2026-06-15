@@ -204,10 +204,9 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="ListBoxItem">
                             <Border x:Name="OuterBd"
-                                    Background="{TemplateBinding Background}"
-                                    BorderThickness="3,0,0,0"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="3,0,0,0">
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="3,0,0,0">
                                 <Border x:Name="InnerBd"
                                         Background="Transparent"
                                         BorderBrush="{DynamicResource BorderThinBrush}"

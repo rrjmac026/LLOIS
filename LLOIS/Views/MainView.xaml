@@ -128,10 +128,9 @@
                         BorderThickness="0,0,1,1"
                         Padding="12,6">
                     <TextBlock x:Name="ResultCount"
-                               Text="All ordinances"
-                               FontSize="11" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextTertiaryBrush}"
-                               TextTransform="Uppercase"/>
+                        Text="All ordinances"
+                        FontSize="11" FontWeight="SemiBold"
+                        Foreground="{DynamicResource TextTertiaryBrush}"/>
                 </Border>
 
                 <!-- Right border separator -->

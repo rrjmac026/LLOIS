@@ -81,7 +81,7 @@
     <SolidColorBrush x:Key="BrandLightBrush"      Color="{StaticResource BrandLightColor}"/>
     <SolidColorBrush x:Key="BrandVeryLightBrush"  Color="{StaticResource BrandVeryLightColor}"/>
     <SolidColorBrush x:Key="AccentGreenBrush"     Color="{StaticResource AccentGreenColor}"/>
-    <SolidColorBrush x:Key="AccentGreenLightBrush"Color="{StaticResource AccentGreenLightColor}"/>
+    <SolidColorBrush x:Key="AccentGreenLightBrush" Color="{StaticResource AccentGreenLightColor}"/>
     <SolidColorBrush x:Key="AccentGreenTextBrush" Color="{StaticResource AccentGreenTextColor}"/>
     <SolidColorBrush x:Key="BorderThinBrush"      Color="{StaticResource BorderThinColor}"/>
     <SolidColorBrush x:Key="BorderMedBrush"       Color="{StaticResource BorderMedColor}"/>

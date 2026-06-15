@@ -83,7 +83,7 @@ public partial class MainView : UserControl
                 results = results.Where(o => o.Status == parsed).ToList();
 
             OrdinanceList.ItemsSource = results;
-            ResultCount.Text          = $"{results.Count} ordinance(s)";
+            ResultCount.Text = $"{results.Count} ORDINANCE(S)";
             ClearDetail();
         }
         catch (Exception ex)
