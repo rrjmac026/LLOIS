@@ -30,8 +30,20 @@ public partial class MainView : UserControl
         Loaded      += OnLoaded;
 
         // Keep theme-toggle button label in sync
-        ThemeService.ThemeChanged += dark =>
-            Dispatcher.Invoke(() => ThemePopupBtn.Content = dark ? "☀ Light Mode" : "🌙 Dark Mode");
+        // In the constructor, replace the ThemeChanged subscription:
+        ThemeService.ThemeChanged += dark => Dispatcher.Invoke(() => SyncThemeLabel(dark));
+    }
+
+    private void SyncThemeLabel(bool dark)
+    {
+        if (ThemePopupBtn.Template.FindName("ThemeBtnLabel", ThemePopupBtn) is TextBlock lbl)
+        {
+            lbl.Text = dark ? "Light Mode" : "Dark Mode";
+            // Also update the emoji — find the first TextBlock sibling
+            var panel = lbl.Parent as StackPanel;
+            if (panel?.Children[0] is TextBlock icon)
+                icon.Text = dark ? "☀" : "🌙";
+        }
     }
 
     public void PreloadData()
@@ -49,9 +61,12 @@ public partial class MainView : UserControl
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Populate user chip + dropdown labels
-        UserChipBtn.Tag      = _currentUser.Username;
+        UserChipBtn.Tag        = _currentUser.Username;
         DropdownNameLabel.Text = _currentUser.Username;
         DropdownRoleLabel.Text = _currentUser.Role.ToString();
+        DropdownAvatarLabel.Text = _currentUser.Username.Length > 0
+            ? _currentUser.Username[0].ToString().ToUpper()
+            : "?";
 
         bool isAdmin  = _currentUser.Role == UserRole.Admin;
         bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
@@ -61,7 +76,9 @@ public partial class MainView : UserControl
         AuditBtn.Visibility = isAdmin  ? Visibility.Visible : Visibility.Collapsed;
 
         // Sync theme menu item label on load
-        ThemePopupBtn.Content = ThemeService.IsDark ? "☀ Light Mode" : "🌙 Dark Mode";
+        // After the template is applied:
+        ThemePopupBtn.ApplyTemplate();
+        SyncThemeLabel(ThemeService.IsDark);
 
         await LoadOrdinancesAsync();
     }
@@ -70,10 +87,11 @@ public partial class MainView : UserControl
 
     private void ThemeToggleBtn_Click(object sender, RoutedEventArgs e)
     {
-        UserPopup.IsOpen = false;
         ThemeService.Toggle();
         if (_selectedOrdinance is not null)
             ShowDetail(_selectedOrdinance);
+        // Re-open the popup since the theme change causes it to close
+        UserPopup.IsOpen = true;
     }
 
     // ── Data loading ───────────────────────────────────────────────────────

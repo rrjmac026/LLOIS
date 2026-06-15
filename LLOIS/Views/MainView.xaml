@@ -81,35 +81,46 @@
                                 BorderBrush="{DynamicResource BorderThinBrush}"
                                 BorderThickness="1"
                                 CornerRadius="10"
-                                Padding="0,6"
-                                MinWidth="200"
-                                Margin="0,4,0,0">
+                                MinWidth="220"
+                                Margin="0,6,0,0">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="4"
-                                                Color="#000000" Opacity="0.12"/>
+                                <DropShadowEffect BlurRadius="20" ShadowDepth="6"
+                                                Color="#000000" Opacity="0.15"/>
                             </Border.Effect>
                             <StackPanel>
 
                                 <!-- User info header -->
-                                <StackPanel Margin="14,6,14,10">
-                                    <TextBlock x:Name="DropdownNameLabel"
-                                            FontSize="13" FontWeight="SemiBold"
-                                            Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock x:Name="DropdownRoleLabel"
-                                            FontSize="11" Margin="0,2,0,0"
-                                            Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                </StackPanel>
-
-                                <!-- Divider -->
-                                <Border Height="1" Background="{DynamicResource BorderThinBrush}"
-                                        Margin="0,0,0,6"/>
+                                <Border Padding="16,14,16,14"
+                                        BorderBrush="{DynamicResource BorderThinBrush}"
+                                        BorderThickness="0,0,0,1">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <!-- Avatar circle -->
+                                        <Border Width="36" Height="36" CornerRadius="18"
+                                                Background="{DynamicResource BrandBrush}"
+                                                Margin="0,0,10,0">
+                                            <TextBlock x:Name="DropdownAvatarLabel"
+                                                    FontSize="14" FontWeight="Bold"
+                                                    Foreground="White"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"/>
+                                        </Border>
+                                        <!-- Name + role -->
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock x:Name="DropdownNameLabel"
+                                                    FontSize="13" FontWeight="SemiBold"
+                                                    Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock x:Name="DropdownRoleLabel"
+                                                    FontSize="11" Margin="0,2,0,0"
+                                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
 
                                 <!-- Theme toggle -->
                                 <Button x:Name="ThemePopupBtn"
-                                        Content="🌙 Dark Mode"
                                         Click="ThemeToggleBtn_Click"
                                         HorizontalContentAlignment="Left"
-                                        Padding="14,8"
+                                        Padding="16,10"
                                         BorderThickness="0"
                                         Background="Transparent"
                                         Foreground="{DynamicResource TextPrimaryBrush}"
@@ -120,8 +131,15 @@
                                             <Border x:Name="Bd"
                                                     Background="{TemplateBinding Background}"
                                                     Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter HorizontalAlignment="Left"
-                                                                VerticalAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="🌙" FontSize="14" Margin="0,0,10,0"
+                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock x:Name="ThemeBtnLabel"
+                                                            Text="Dark Mode"
+                                                            FontSize="13"
+                                                            Foreground="{DynamicResource TextPrimaryBrush}"
+                                                            VerticalAlignment="Center"/>
+                                                </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -138,14 +156,12 @@
                                 </Button>
 
                                 <!-- Divider -->
-                                <Border Height="1" Background="{DynamicResource BorderThinBrush}"
-                                        Margin="0,6"/>
+                                <Border Height="1" Background="{DynamicResource BorderThinBrush}"/>
 
                                 <!-- Logout -->
-                                <Button Content="🚪 Logout"
-                                        Click="LogoutBtn_Click"
+                                <Button Click="LogoutBtn_Click"
                                         HorizontalContentAlignment="Left"
-                                        Padding="14,8"
+                                        Padding="16,10"
                                         BorderThickness="0"
                                         Background="Transparent"
                                         Foreground="{DynamicResource DangerFgBrush}"
@@ -156,8 +172,14 @@
                                             <Border x:Name="Bd"
                                                     Background="{TemplateBinding Background}"
                                                     Padding="{TemplateBinding Padding}">
-                                                <ContentPresenter HorizontalAlignment="Left"
-                                                                VerticalAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="🚪" FontSize="14" Margin="0,0,10,0"
+                                                            VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Logout"
+                                                            FontSize="13"
+                                                            Foreground="{DynamicResource DangerFgBrush}"
+                                                            VerticalAlignment="Center"/>
+                                                </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
@@ -172,6 +194,9 @@
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
+
+                                <!-- Bottom padding -->
+                                <Border Height="4"/>
 
                             </StackPanel>
                         </Border>
