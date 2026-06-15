@@ -1,60 +1,102 @@
 ﻿<UserControl x:Class="LLOIS.Views.MainView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:LLOIS">
+             xmlns:local="clr-namespace:LLOIS"
+             Background="{DynamicResource BgPrimaryBrush}">
 
     <UserControl.Resources>
         <local:NullToVisibilityConverter x:Key="NullToVisibility"/>
-        <Style x:Key="ToolBtn" TargetType="Button">
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="Margin" Value="0,0,6,0"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
     </UserControl.Resources>
 
-    <!-- Everything inside your current MainWindow DockPanel goes here unchanged -->
     <DockPanel>
-        <!-- Top Bar -->
-        <Border DockPanel.Dock="Top" Background="#1a3a6b" Padding="14,10">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="UsersBtn" Content="👥 Users" Style="{StaticResource ToolBtn}"
-                            Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
+
+        <!-- ══════════════════════════════════════════════════════
+             TOP BAR
+        ═══════════════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource TopbarBgBrush}"
+                Padding="14,0" Height="52">
+            <DockPanel VerticalAlignment="Center">
+
+                <!-- Right cluster -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            VerticalAlignment="Center">
+
+                    <!-- Theme toggle -->
+                    <Button x:Name="ThemeToggleBtn"
+                            Style="{StaticResource TopbarBtn}"
+                            ToolTip="Toggle light / dark mode"
+                            Click="ThemeToggleBtn_Click"
+                            Content="☀ Light"/>
+
+                    <Button x:Name="UsersBtn" Content="👥 Users"
+                            Style="{StaticResource TopbarBtn}"
                             Click="UsersBtn_Click" Visibility="Collapsed"/>
-                    <Button x:Name="AuditBtn" Content="🔍 Audit Log" Style="{StaticResource ToolBtn}"
-                            Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
+                    <Button x:Name="AuditBtn" Content="🔍 Audit Log"
+                            Style="{StaticResource TopbarBtn}"
                             Click="AuditBtn_Click" Visibility="Collapsed"/>
-                    <Button Content="📊 Reports" Style="{StaticResource ToolBtn}"
-                            Background="#2d5a9e" Foreground="White" BorderBrush="#4a72b0"
+                    <Button Content="📊 Reports"
+                            Style="{StaticResource TopbarBtn}"
                             Click="ReportsBtn_Click"/>
-                    <Button Content="🚪 Logout" Style="{StaticResource ToolBtn}"
-                            Background="#8b1a1a" Foreground="White" BorderBrush="#aa3333"
-                            Click="LogoutBtn_Click" Margin="10,0,0,0"/>
-                    <TextBlock x:Name="UserLabel" Foreground="#AACCFF"
-                               VerticalAlignment="Center" FontSize="12" Margin="8,0,0,0"/>
+                    <Button Content="🚪 Logout"
+                            Style="{StaticResource TopbarDangerBtn}"
+                            Click="LogoutBtn_Click" Margin="6,0,0,0"/>
+
+                    <!-- User chip: dot + name -->
+                    <Border CornerRadius="10"
+                            Background="#18FFFFFF"
+                            BorderBrush="#25FFFFFF"
+                            BorderThickness="1"
+                            Padding="10,4" Margin="12,0,0,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="7" Height="7" Fill="#4ADE80"
+                                     VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock x:Name="UserLabel"
+                                       Foreground="{DynamicResource TopbarUserFgBrush}"
+                                       FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
+
+                <!-- Title -->
                 <TextBlock Text="🏛️ Local Legislative Ordinance Information System"
-                           Foreground="White" FontSize="16" FontWeight="Bold"
+                           Foreground="White" FontSize="15" FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
             </DockPanel>
         </Border>
 
-        <!-- Search + Filter Bar -->
-        <Border DockPanel.Dock="Top" Background="#F0F4FF" Padding="12,8"
-                BorderBrush="#DDEEFF" BorderThickness="0,0,0,1">
+        <!-- ══════════════════════════════════════════════════════
+             SEARCH / FILTER BAR
+        ═══════════════════════════════════════════════════════ -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderThinBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="12,8">
             <DockPanel>
-                <Button x:Name="AddBtn" DockPanel.Dock="Right" Content="➕ Add Ordinance"
-                        Width="130" Margin="8,0,0,0" FontWeight="SemiBold"
-                        Background="#1a7a3a" Foreground="White"
-                        Click="AddBtn_Click" Visibility="Collapsed"/>
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Name="SearchBox" Width="280" FontSize="13" Padding="6,4"
-                             KeyDown="SearchBox_KeyDown"
-                             Text="Search by ID, title, subject, sponsor..."/>
-                    <Button Content="Search" Width="75" Margin="6,0,10,0"
+                <Button x:Name="AddBtn"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource AddBtn}"
+                        Content="➕ Add Ordinance"
+                        Click="AddBtn_Click"
+                        Visibility="Collapsed"/>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox x:Name="SearchBox" Width="300" Height="32"
+                             Style="{StaticResource PlaceholderTextBox}"
+                             Tag="Search by ID, title, subject, sponsor…"
+                             VerticalContentAlignment="Center"
+                             KeyDown="SearchBox_KeyDown"/>
+                    <Button Content="Search" Width="72" Height="32" Margin="8,0,16,0"
+                            Background="{DynamicResource BrandBrush}"
+                            Foreground="White" BorderThickness="0"
                             Click="SearchButton_Click"/>
-                    <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
-                    <ComboBox x:Name="StatusFilter" Width="120" SelectionChanged="StatusFilter_Changed">
+
+                    <TextBlock Text="Status:" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               FontSize="12" Margin="0,0,8,0"/>
+                    <ComboBox x:Name="StatusFilter" Width="130" Height="32"
+                              SelectionChanged="StatusFilter_Changed">
                         <ComboBoxItem Content="All" IsSelected="True"/>
                         <ComboBoxItem Content="In Effect"/>
                         <ComboBoxItem Content="Amended"/>
@@ -66,145 +108,338 @@
             </DockPanel>
         </Border>
 
-        <!-- Main Content (identical to your current MainWindow grid) -->
+        <!-- ══════════════════════════════════════════════════════
+             MAIN CONTENT AREA
+        ═══════════════════════════════════════════════════════ -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="270"/>
+                <ColumnDefinition Width="260"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <DockPanel Grid.Column="0" Margin="8,8,4,8">
-                <TextBlock DockPanel.Dock="Top" x:Name="ResultCount"
-                           Text="All ordinances" FontSize="11" Foreground="Gray" Margin="0,0,0,4"/>
+            <!-- ── SIDEBAR ──────────────────────────────────── -->
+            <DockPanel Grid.Column="0"
+                       Background="{DynamicResource BgPrimaryBrush}">
+
+                <!-- Count header -->
+                <Border DockPanel.Dock="Top"
+                        Background="{DynamicResource BgSecondaryBrush}"
+                        BorderBrush="{DynamicResource BorderThinBrush}"
+                        BorderThickness="0,0,1,1"
+                        Padding="12,6">
+                    <TextBlock x:Name="ResultCount"
+                               Text="All ordinances"
+                               FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextTertiaryBrush}"
+                               TextTransform="Uppercase"/>
+                </Border>
+
+                <!-- Right border separator -->
+                <Border DockPanel.Dock="Right" Width="1"
+                        Background="{DynamicResource BorderThinBrush}"/>
+
                 <ListBox x:Name="OrdinanceList"
                          SelectionChanged="OrdinanceList_SelectionChanged"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingPanel.IsVirtualizing="True">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="4,3">
-                                <TextBlock Text="{Binding OrdinanceNumber}"
-                                           FontWeight="SemiBold" FontSize="12"/>
-                                <TextBlock Text="{Binding Title}" FontSize="11" TextWrapping="Wrap"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                    <TextBlock Text="{Binding Status}" FontSize="10" Foreground="SteelBlue"/>
-                                    <TextBlock Text=" · " FontSize="10" Foreground="Gray"/>
-                                    <TextBlock Text="{Binding Type}" FontSize="10" Foreground="Gray"/>
+                            <Grid Margin="10,10,10,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="4"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="6"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Ordinance number -->
+                                <TextBlock Grid.Row="0"
+                                           Text="{Binding OrdinanceNumber}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BrandBrush}"/>
+
+                                <!-- Title (truncated) -->
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding Title}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           TextWrapping="NoWrap"
+                                           TextTrimming="CharacterEllipsis"/>
+
+                                <!-- Status + Type pills -->
+                                <StackPanel Grid.Row="4" Orientation="Horizontal">
+                                    <!-- Status pill (colored dynamically in code-behind via tag)
+                                         We use a ContentControl with a DataTemplateSelector trick;
+                                         simpler: bind Tag to Status text and color in code. -->
+                                    <Border x:Name="StatusPill"
+                                            CornerRadius="8" Padding="7,2" Margin="0,0,5,0"
+                                            Background="{DynamicResource BgTertiaryBrush}">
+                                        <TextBlock Text="{Binding Status}"
+                                                   FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </Border>
+                                    <Border CornerRadius="8" Padding="7,2"
+                                            Background="{DynamicResource BgTertiaryBrush}">
+                                        <TextBlock Text="{Binding Type}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource TextTertiaryBrush}"/>
+                                    </Border>
                                 </StackPanel>
-                            </StackPanel>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </DockPanel>
 
-            <DockPanel Grid.Column="1" Margin="4,8,8,8">
-                <Border DockPanel.Dock="Top" x:Name="ActionBar"
-                        Background="#F8F8F8" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1"
-                        Padding="8,6" Margin="0,0,0,8" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal">
-                        <Button x:Name="EditBtn" Content="✏️ Edit" Style="{StaticResource ToolBtn}"
-                                Click="EditBtn_Click" Visibility="Collapsed"/>
-                        <Button x:Name="AmendBtn" Content="📝 Add Amendment"
-                                Style="{StaticResource ToolBtn}"
-                                Click="AmendBtn_Click" Visibility="Collapsed"/>
-                        <Button x:Name="OpenPdfBtn" Content="📄 Open PDF"
-                                Style="{StaticResource ToolBtn}"
-                                Click="OpenPdfBtn_Click" Visibility="Collapsed"/>
-                        <Button x:Name="DeleteBtn" Content="🗑️ Delete"
-                                Style="{StaticResource ToolBtn}"
-                                Background="#FFF0F0" Foreground="#CC0000"
-                                Click="DeleteBtn_Click" Visibility="Collapsed"/>
-                    </StackPanel>
+            <!-- ── DETAIL PANE ───────────────────────────────── -->
+            <DockPanel Grid.Column="1"
+                       Background="{DynamicResource BgPrimaryBrush}">
+
+                <!-- Action bar -->
+                <Border DockPanel.Dock="Top"
+                        x:Name="ActionBar"
+                        Background="{DynamicResource BgSecondaryBrush}"
+                        BorderBrush="{DynamicResource BorderThinBrush}"
+                        BorderThickness="0,0,0,1"
+                        Padding="12,8"
+                        Visibility="Collapsed">
+                    <DockPanel>
+                        <!-- Delete pushed to the right -->
+                        <Button x:Name="DeleteBtn"
+                                DockPanel.Dock="Right"
+                                Content="🗑 Delete"
+                                Style="{StaticResource ActionDangerBtn}"
+                                Click="DeleteBtn_Click"
+                                Visibility="Collapsed"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="EditBtn"
+                                    Content="✏ Edit"
+                                    Style="{StaticResource ActionBtn}"
+                                    Margin="0,0,6,0"
+                                    Click="EditBtn_Click"
+                                    Visibility="Collapsed"/>
+                            <Button x:Name="AmendBtn"
+                                    Content="📝 Add Amendment"
+                                    Style="{StaticResource ActionBtn}"
+                                    Margin="0,0,6,0"
+                                    Click="AmendBtn_Click"
+                                    Visibility="Collapsed"/>
+                            <Button x:Name="OpenPdfBtn"
+                                    Content="📄 Open PDF"
+                                    Style="{StaticResource ActionBtn}"
+                                    Click="OpenPdfBtn_Click"
+                                    Visibility="Collapsed"/>
+                        </StackPanel>
+                    </DockPanel>
                 </Border>
 
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="DetailPanel" Visibility="Collapsed">
-                        <Border Background="#F0F4FF" CornerRadius="6" Padding="12" Margin="0,0,0,10">
+                <!-- Detail scroll area -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Background="{DynamicResource BgPrimaryBrush}">
+                    <StackPanel x:Name="DetailPanel"
+                                Visibility="Collapsed"
+                                Margin="16,16,16,24">
+
+                        <!-- ── Hero card ──────────────────────── -->
+                        <Border x:Name="HeroCard"
+                                CornerRadius="10"
+                                Padding="18,16"
+                                Margin="0,0,0,16">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop x:Name="HeroGradStart"
+                                                  Color="{DynamicResource HeroBgStartColor}" Offset="0"/>
+                                    <GradientStop x:Name="HeroGradEnd"
+                                                  Color="{DynamicResource HeroBgEndColor}"   Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+
                             <StackPanel>
-                                <TextBlock x:Name="DetailId" FontSize="12" Foreground="Gray"/>
-                                <TextBlock x:Name="DetailSubject" FontSize="15"
-                                           FontWeight="Bold" TextWrapping="Wrap" Margin="0,4,0,6"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <Border x:Name="StatusBadgeControl" CornerRadius="4" Padding="8,3">
-                                        <TextBlock x:Name="DetailStatus" FontSize="12" FontWeight="SemiBold"/>
+                                <!-- Ord number + series -->
+                                <TextBlock x:Name="DetailId"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource HeroNumFgBrush}"/>
+
+                                <!-- Full subject as main heading -->
+                                <TextBlock x:Name="DetailSubject"
+                                           FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource HeroTitleFgBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,6,0,0"/>
+
+                                <!-- Series · Type · Sponsor -->
+                                <TextBlock x:Name="DetailSeries"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource HeroSubjectFgBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,4,0,10"/>
+
+                                <!-- Pill row -->
+                                <WrapPanel Orientation="Horizontal">
+                                    <Border x:Name="StatusBadgeControl"
+                                            CornerRadius="10" Padding="9,3" Margin="0,0,6,4">
+                                        <TextBlock x:Name="DetailStatus"
+                                                   FontSize="11" FontWeight="SemiBold"/>
                                     </Border>
-                                    <TextBlock x:Name="DetailSeries" FontSize="12"
-                                               Foreground="Gray" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                </StackPanel>
-                                <StackPanel x:Name="RelationshipPanel" Orientation="Horizontal"
-                                            Margin="0,6,0,0" Visibility="Collapsed">
-                                    <Border x:Name="AmendsPanel" Background="#FFF8E0"
-                                            CornerRadius="4" Padding="8,3" Margin="0,0,6,0" Visibility="Collapsed">
-                                        <TextBlock x:Name="AmendsLabel" FontSize="11" Foreground="#7a4b00"/>
+
+                                    <!-- PDF badge -->
+                                    <Border x:Name="PdfBadge"
+                                            Background="#18FFFFFF"
+                                            BorderBrush="#22FFFFFF"
+                                            BorderThickness="1"
+                                            CornerRadius="10" Padding="9,3" Margin="0,0,6,4"
+                                            Visibility="Collapsed">
+                                        <TextBlock Text="📎 PDF attached"
+                                                   FontSize="11"
+                                                   Foreground="#B8CEF0"/>
                                     </Border>
-                                    <Border x:Name="SupersedesPanel" Background="#E8F0FF"
-                                            CornerRadius="4" Padding="8,3" Margin="0,0,6,0" Visibility="Collapsed">
-                                        <TextBlock x:Name="SupersedesLabel" FontSize="11" Foreground="#1a3a6b"/>
+
+                                    <!-- Relationship chips -->
+                                    <Border x:Name="AmendsPanel"
+                                            Background="#18FFFFFF" BorderBrush="#22FFFFFF"
+                                            BorderThickness="1"
+                                            CornerRadius="10" Padding="9,3" Margin="0,0,6,4"
+                                            Visibility="Collapsed">
+                                        <TextBlock x:Name="AmendsLabel" FontSize="11" Foreground="#A8C0E8"/>
                                     </Border>
-                                    <Border x:Name="RepealedByPanel" Background="#FFF0F0"
-                                            CornerRadius="4" Padding="8,3" Visibility="Collapsed">
-                                        <TextBlock x:Name="RepealedByLabel" FontSize="11" Foreground="#8b1a1a"/>
+                                    <Border x:Name="SupersedesPanel"
+                                            Background="#18FFFFFF" BorderBrush="#22FFFFFF"
+                                            BorderThickness="1"
+                                            CornerRadius="10" Padding="9,3" Margin="0,0,6,4"
+                                            Visibility="Collapsed">
+                                        <TextBlock x:Name="SupersedesLabel" FontSize="11" Foreground="#A8C0E8"/>
                                     </Border>
-                                </StackPanel>
-                                <Border x:Name="PdfBadge" Background="#E8FFE8" CornerRadius="4"
-                                        Padding="8,3" Margin="0,6,0,0" HorizontalAlignment="Left"
-                                        Visibility="Collapsed">
-                                    <TextBlock Text="📎 PDF document attached" FontSize="11" Foreground="#1a7a3a"/>
-                                </Border>
+                                    <Border x:Name="RepealedByPanel"
+                                            Background="#22FF4444" BorderBrush="#44FF4444"
+                                            BorderThickness="1"
+                                            CornerRadius="10" Padding="9,3" Margin="0,0,6,4"
+                                            Visibility="Collapsed">
+                                        <TextBlock x:Name="RepealedByLabel" FontSize="11" Foreground="#FFAAAA"/>
+                                    </Border>
+                                </WrapPanel>
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="📋 Metadata" FontSize="13" FontWeight="Bold" Margin="0,0,0,6"/>
-                        <Border BorderBrush="#CCDDFF" BorderThickness="1"
-                                CornerRadius="6" Padding="12" Margin="0,0,0,12">
-                            <Grid x:Name="MetadataGrid">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel x:Name="MetaLeft" Grid.Column="0"/>
-                                <StackPanel x:Name="MetaRight" Grid.Column="1"/>
-                            </Grid>
+                        <!-- ── Metadata grid ───────────────────── -->
+                        <TextBlock Text="METADATA"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="0,0,0,8"/>
+
+                        <UniformGrid x:Name="MetadataGrid"
+                                     Columns="2" Margin="0,0,0,16"/>
+
+                        <!-- ── Latest version card ─────────────── -->
+                        <TextBlock Text="CURRENT VERSION"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="0,0,0,8"/>
+
+                        <Border x:Name="LatestVersionCard"
+                                BorderBrush="{DynamicResource BorderThinBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Margin="0,0,0,16"
+                                Visibility="Collapsed">
+                            <StackPanel>
+                                <!-- Version card header -->
+                                <Border x:Name="VersionCardHeader"
+                                        Background="{DynamicResource VersionHeaderBgBrush}"
+                                        BorderBrush="{DynamicResource BorderThinBrush}"
+                                        BorderThickness="0,0,0,1"
+                                        CornerRadius="8,8,0,0"
+                                        Padding="14,9">
+                                    <DockPanel>
+                                        <TextBlock x:Name="VersionNumLabel"
+                                                   DockPanel.Dock="Left"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="VersionDateLabel"
+                                                   DockPanel.Dock="Right"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                                   HorizontalAlignment="Right"/>
+                                    </DockPanel>
+                                </Border>
+                                <!-- Version card body -->
+                                <StackPanel x:Name="LatestVersionPanel" Padding="14,12"/>
+                            </StackPanel>
                         </Border>
 
-                        <TextBlock Text="📄 Current / Latest Version" FontSize="13"
-                                   FontWeight="Bold" Margin="0,0,0,6"/>
-                        <Border BorderBrush="#CCDDFF" BorderThickness="1"
-                                CornerRadius="6" Padding="12" Margin="0,0,0,12">
-                            <StackPanel x:Name="LatestVersionPanel"/>
-                        </Border>
+                        <!-- ── Version history timeline ────────── -->
+                        <TextBlock x:Name="HistoryHeader"
+                                   Text="VERSION HISTORY"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="0,0,0,8"
+                                   Visibility="Collapsed"/>
 
-                        <TextBlock x:Name="HistoryHeader" Text="🕓 Version History"
-                                   FontSize="13" FontWeight="Bold" Margin="0,0,0,6"/>
                         <ItemsControl x:Name="VersionHistoryList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border BorderBrush="#E0E0E0" BorderThickness="1"
-                                            CornerRadius="6" Padding="10" Margin="0,0,0,8">
-                                        <StackPanel>
-                                            <TextBlock FontWeight="SemiBold" FontSize="12">
-                                                <Run Text="Version "/>
-                                                <Run Text="{Binding VersionNumber}"/>
-                                                <Run Text=" — "/>
-                                                <Run Text="{Binding Title}"/>
-                                            </TextBlock>
-                                            <TextBlock Margin="0,3,0,0" FontSize="11">
-                                                <Run Text="Enacted: " FontWeight="SemiBold"/>
-                                                <Run Text="{Binding DateEnacted}"/>
-                                                <Run Text="  |  "/>
-                                                <Run Text="{Binding EnactedBy}"/>
-                                            </TextBlock>
-                                            <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
-                                                       Foreground="Gray" FontSize="11" Margin="0,3,0,0"/>
-                                            <TextBlock Text="{Binding AmendmentNotes}" TextWrapping="Wrap"
-                                                       Foreground="#CC6600" FontStyle="Italic" FontSize="11"
-                                                       Margin="0,3,0,0"
-                                                       Visibility="{Binding AmendmentNotes,
-                                                           Converter={StaticResource NullToVisibility}}"/>
-                                        </StackPanel>
-                                    </Border>
+                                    <!-- Timeline row: dot + left line + content -->
+                                    <Grid Margin="0,0,0,12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Timeline dot -->
+                                        <Ellipse Grid.Column="0"
+                                                 Width="8" Height="8"
+                                                 Fill="{DynamicResource BorderMedBrush}"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Top"
+                                                 Margin="0,6,0,0"/>
+
+                                        <!-- Content -->
+                                        <Border Grid.Column="1"
+                                                BorderBrush="{DynamicResource BorderThinBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="8"
+                                                Padding="12,10">
+                                            <StackPanel>
+                                                <TextBlock FontWeight="SemiBold" FontSize="12"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}">
+                                                    <Run Text="Version "/>
+                                                    <Run Text="{Binding VersionNumber}"/>
+                                                    <Run Text=" — "/>
+                                                    <Run Text="{Binding Title}"/>
+                                                </TextBlock>
+                                                <TextBlock Margin="0,4,0,0" FontSize="11"
+                                                           Foreground="{DynamicResource TextTertiaryBrush}">
+                                                    <Run Text="Enacted: " FontWeight="SemiBold"/>
+                                                    <Run Text="{Binding DateEnacted}"/>
+                                                    <Run Text="  ·  "/>
+                                                    <Run Text="{Binding EnactedBy}"/>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Content}"
+                                                           TextWrapping="Wrap"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           Margin="0,4,0,0"/>
+                                                <Border x:Name="HistoryNotesBorder"
+                                                        Margin="0,6,0,0"
+                                                        CornerRadius="6"
+                                                        Padding="8,6"
+                                                        Background="{DynamicResource VersionNotesBgBrush}"
+                                                        Visibility="{Binding AmendmentNotes,
+                                                            Converter={StaticResource NullToVisibility}}">
+                                                    <TextBlock Text="{Binding AmendmentNotes}"
+                                                               TextWrapping="Wrap"
+                                                               FontSize="11"
+                                                               FontStyle="Italic"
+                                                               Foreground="{DynamicResource VersionNotesFgBrush}"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>

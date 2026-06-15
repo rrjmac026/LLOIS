@@ -1,0 +1,116 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ── Core surfaces ─────────────────────────────────── -->
+    <Color x:Key="BgPrimaryColor">#FFFFFF</Color>
+    <Color x:Key="BgSecondaryColor">#F4F6FB</Color>
+    <Color x:Key="BgTertiaryColor">#EBEef5</Color>
+    <Color x:Key="BgHoverColor">#E8EDF8</Color>
+    <Color x:Key="BgActiveColor">#DCE4F5</Color>
+
+    <!-- ── Text ──────────────────────────────────────────── -->
+    <Color x:Key="TextPrimaryColor">#111827</Color>
+    <Color x:Key="TextSecondaryColor">#4B5563</Color>
+    <Color x:Key="TextTertiaryColor">#9CA3AF</Color>
+    <Color x:Key="TextOnDarkColor">#FFFFFF</Color>
+
+    <!-- ── Brand / accent ────────────────────────────────── -->
+    <Color x:Key="BrandColor">#1a3a6b</Color>
+    <Color x:Key="BrandLightColor">#2d5a9e</Color>
+    <Color x:Key="BrandVeryLightColor">#EEF4FF</Color>
+    <Color x:Key="AccentGreenColor">#1a7a3a</Color>
+    <Color x:Key="AccentGreenLightColor">#DCFCE7</Color>
+    <Color x:Key="AccentGreenTextColor">#14532D</Color>
+
+    <!-- ── Borders ────────────────────────────────────────── -->
+    <Color x:Key="BorderThinColor">#E2E8F0</Color>
+    <Color x:Key="BorderMedColor">#CBD5E1</Color>
+
+    <!-- ── Status badges ─────────────────────────────────── -->
+    <Color x:Key="StatusInEffectBgColor">#DCFCE7</Color>
+    <Color x:Key="StatusInEffectFgColor">#14532D</Color>
+    <Color x:Key="StatusAmendedBgColor">#FEF9C3</Color>
+    <Color x:Key="StatusAmendedFgColor">#854D0E</Color>
+    <Color x:Key="StatusRepealedBgColor">#FEE2E2</Color>
+    <Color x:Key="StatusRepealedFgColor">#991B1B</Color>
+    <Color x:Key="StatusReviewBgColor">#F1F5F9</Color>
+    <Color x:Key="StatusReviewFgColor">#475569</Color>
+    <Color x:Key="StatusSupersededBgColor">#EFF6FF</Color>
+    <Color x:Key="StatusSupersededFgColor">#1D4ED8</Color>
+
+    <!-- ── Danger ─────────────────────────────────────────── -->
+    <Color x:Key="DangerBgColor">#FFF5F5</Color>
+    <Color x:Key="DangerFgColor">#CC2222</Color>
+    <Color x:Key="DangerBorderColor">#FCA5A5</Color>
+
+    <!-- ── Topbar ─────────────────────────────────────────── -->
+    <Color x:Key="TopbarBgColor">#1a3a6b</Color>
+    <Color x:Key="TopbarBtnBgColor">#22447A</Color>
+    <Color x:Key="TopbarBtnFgColor">#C8DCFF</Color>
+    <Color x:Key="TopbarDangerBgColor">#7A1818</Color>
+    <Color x:Key="TopbarDangerFgColor">#FFC8C8</Color>
+    <Color x:Key="TopbarUserFgColor">#90B4E8</Color>
+
+    <!-- ── Hero card ──────────────────────────────────────── -->
+    <Color x:Key="HeroBgStartColor">#1a3a6b</Color>
+    <Color x:Key="HeroBgEndColor">#213E7A</Color>
+    <Color x:Key="HeroNumFgColor">#90B4E8</Color>
+    <Color x:Key="HeroTitleFgColor">#FFFFFF</Color>
+    <Color x:Key="HeroSubjectFgColor">#B8CEF0</Color>
+
+    <!-- ── Sidebar selected item left accent ─────────────── -->
+    <Color x:Key="SidebarAccentColor">#1a3a6b</Color>
+    <Color x:Key="SidebarActiveBgColor">#EEF4FF</Color>
+
+    <!-- ── Version card ───────────────────────────────────── -->
+    <Color x:Key="VersionHeaderBgColor">#F8FAFF</Color>
+    <Color x:Key="VersionNotesBgColor">#FEF9C3</Color>
+    <Color x:Key="VersionNotesFgColor">#92400E</Color>
+
+    <!-- ── Brushes (derived from colors above) ───────────── -->
+    <SolidColorBrush x:Key="BgPrimaryBrush"       Color="{StaticResource BgPrimaryColor}"/>
+    <SolidColorBrush x:Key="BgSecondaryBrush"     Color="{StaticResource BgSecondaryColor}"/>
+    <SolidColorBrush x:Key="BgTertiaryBrush"      Color="{StaticResource BgTertiaryColor}"/>
+    <SolidColorBrush x:Key="BgHoverBrush"         Color="{StaticResource BgHoverColor}"/>
+    <SolidColorBrush x:Key="BgActiveBrush"        Color="{StaticResource BgActiveColor}"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush"     Color="{StaticResource TextPrimaryColor}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush"   Color="{StaticResource TextSecondaryColor}"/>
+    <SolidColorBrush x:Key="TextTertiaryBrush"    Color="{StaticResource TextTertiaryColor}"/>
+    <SolidColorBrush x:Key="TextOnDarkBrush"      Color="{StaticResource TextOnDarkColor}"/>
+    <SolidColorBrush x:Key="BrandBrush"           Color="{StaticResource BrandColor}"/>
+    <SolidColorBrush x:Key="BrandLightBrush"      Color="{StaticResource BrandLightColor}"/>
+    <SolidColorBrush x:Key="BrandVeryLightBrush"  Color="{StaticResource BrandVeryLightColor}"/>
+    <SolidColorBrush x:Key="AccentGreenBrush"     Color="{StaticResource AccentGreenColor}"/>
+    <SolidColorBrush x:Key="AccentGreenLightBrush"Color="{StaticResource AccentGreenLightColor}"/>
+    <SolidColorBrush x:Key="AccentGreenTextBrush" Color="{StaticResource AccentGreenTextColor}"/>
+    <SolidColorBrush x:Key="BorderThinBrush"      Color="{StaticResource BorderThinColor}"/>
+    <SolidColorBrush x:Key="BorderMedBrush"       Color="{StaticResource BorderMedColor}"/>
+    <SolidColorBrush x:Key="TopbarBgBrush"        Color="{StaticResource TopbarBgColor}"/>
+    <SolidColorBrush x:Key="TopbarBtnBgBrush"     Color="{StaticResource TopbarBtnBgColor}"/>
+    <SolidColorBrush x:Key="TopbarBtnFgBrush"     Color="{StaticResource TopbarBtnFgColor}"/>
+    <SolidColorBrush x:Key="TopbarDangerBgBrush"  Color="{StaticResource TopbarDangerBgColor}"/>
+    <SolidColorBrush x:Key="TopbarDangerFgBrush"  Color="{StaticResource TopbarDangerFgColor}"/>
+    <SolidColorBrush x:Key="TopbarUserFgBrush"    Color="{StaticResource TopbarUserFgColor}"/>
+    <SolidColorBrush x:Key="HeroNumFgBrush"       Color="{StaticResource HeroNumFgColor}"/>
+    <SolidColorBrush x:Key="HeroTitleFgBrush"     Color="{StaticResource HeroTitleFgColor}"/>
+    <SolidColorBrush x:Key="HeroSubjectFgBrush"   Color="{StaticResource HeroSubjectFgColor}"/>
+    <SolidColorBrush x:Key="SidebarAccentBrush"   Color="{StaticResource SidebarAccentColor}"/>
+    <SolidColorBrush x:Key="SidebarActiveBgBrush" Color="{StaticResource SidebarActiveBgColor}"/>
+    <SolidColorBrush x:Key="VersionHeaderBgBrush" Color="{StaticResource VersionHeaderBgColor}"/>
+    <SolidColorBrush x:Key="VersionNotesBgBrush"  Color="{StaticResource VersionNotesBgColor}"/>
+    <SolidColorBrush x:Key="VersionNotesFgBrush"  Color="{StaticResource VersionNotesFgColor}"/>
+    <SolidColorBrush x:Key="DangerBgBrush"        Color="{StaticResource DangerBgColor}"/>
+    <SolidColorBrush x:Key="DangerFgBrush"        Color="{StaticResource DangerFgColor}"/>
+    <SolidColorBrush x:Key="DangerBorderBrush"    Color="{StaticResource DangerBorderColor}"/>
+    <SolidColorBrush x:Key="StatusInEffectBgBrush"Color="{StaticResource StatusInEffectBgColor}"/>
+    <SolidColorBrush x:Key="StatusInEffectFgBrush"Color="{StaticResource StatusInEffectFgColor}"/>
+    <SolidColorBrush x:Key="StatusAmendedBgBrush" Color="{StaticResource StatusAmendedBgColor}"/>
+    <SolidColorBrush x:Key="StatusAmendedFgBrush" Color="{StaticResource StatusAmendedFgColor}"/>
+    <SolidColorBrush x:Key="StatusRepealedBgBrush"Color="{StaticResource StatusRepealedBgColor}"/>
+    <SolidColorBrush x:Key="StatusRepealedFgBrush"Color="{StaticResource StatusRepealedFgColor}"/>
+    <SolidColorBrush x:Key="StatusReviewBgBrush"  Color="{StaticResource StatusReviewBgColor}"/>
+    <SolidColorBrush x:Key="StatusReviewFgBrush"  Color="{StaticResource StatusReviewFgColor}"/>
+    <SolidColorBrush x:Key="StatusSupersededBgBrush" Color="{StaticResource StatusSupersededBgColor}"/>
+    <SolidColorBrush x:Key="StatusSupersededFgBrush" Color="{StaticResource StatusSupersededFgColor}"/>
+
+</ResourceDictionary>
