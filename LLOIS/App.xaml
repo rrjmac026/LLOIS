@@ -18,24 +18,28 @@
                  Colors come from theme brushes so they flip with dark mode. -->
             <!-- REPLACE the PlaceholderTextBox style entirely -->
             <Style x:Key="PlaceholderTextBox" TargetType="TextBox">
-                <Setter Property="Padding"     Value="8,6"/>
-                <Setter Property="FontSize"    Value="13"/>
-                <Setter Property="Foreground"  Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="Background"  Value="{DynamicResource BgPrimaryBrush}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource BorderThinBrush}"/>
-                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding"          Value="8,6"/>
+                <Setter Property="FontSize"         Value="13"/>
+                <Setter Property="Foreground"       Value="{DynamicResource TextPrimaryBrush}"/>
+                <Setter Property="Background"       Value="{DynamicResource BgPrimaryBrush}"/>
+                <Setter Property="BorderBrush"      Value="{DynamicResource BorderThinBrush}"/>
+                <Setter Property="BorderThickness"  Value="1"/>
+                <Setter Property="CaretBrush"       Value="{DynamicResource TextPrimaryBrush}"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TextBox">
-                            <Border Background="{TemplateBinding Background}"
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="6">
                                 <Grid>
+                                    <!-- PART_ContentHost must be a ScrollViewer with this exact name -->
                                     <ScrollViewer x:Name="PART_ContentHost"
                                                 Background="Transparent"
-                                                Foreground="{TemplateBinding Foreground}"
-                                                Margin="{TemplateBinding Padding}"/>
+                                                BorderThickness="0"
+                                                Margin="{TemplateBinding Padding}"
+                                                TextElement.Foreground="{TemplateBinding Foreground}"/>
                                     <TextBlock x:Name="Placeholder"
                                             Text="{TemplateBinding Tag}"
                                             Foreground="{DynamicResource TextTertiaryBrush}"
@@ -48,13 +52,14 @@
                             <ControlTemplate.Triggers>
                                 <MultiTrigger>
                                     <MultiTrigger.Conditions>
-                                        <Condition Property="Text"              Value=""/>
-                                        <Condition Property="IsKeyboardFocused" Value="False"/>
+                                        <Condition Property="Text"               Value=""/>
+                                        <Condition Property="IsKeyboardFocused"  Value="False"/>
                                     </MultiTrigger.Conditions>
                                     <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
                                 </MultiTrigger>
                                 <Trigger Property="IsKeyboardFocused" Value="True">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}"/>
+                                    <Setter TargetName="Root" Property="BorderBrush"
+                                            Value="{DynamicResource BrandBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
