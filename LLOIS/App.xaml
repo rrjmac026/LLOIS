@@ -11,10 +11,12 @@
 
             <!-- ── Converters ──────────────────────────────────── -->
             <local:NullToVisibilityConverter x:Key="NullToVisibility"/>
+            <local:OrdinanceTypeColorConverter x:Key="TypeColorConverter"/>
 
             <!-- ── Shared TextBox with placeholder ───────────────
                  Tag = placeholder text.
                  Colors come from theme brushes so they flip with dark mode. -->
+            <!-- REPLACE the PlaceholderTextBox style entirely -->
             <Style x:Key="PlaceholderTextBox" TargetType="TextBox">
                 <Setter Property="Padding"     Value="8,6"/>
                 <Setter Property="FontSize"    Value="13"/>
@@ -31,20 +33,22 @@
                                     CornerRadius="6">
                                 <Grid>
                                     <ScrollViewer x:Name="PART_ContentHost"
-                                                  Margin="{TemplateBinding Padding}"/>
+                                                Background="Transparent"
+                                                Foreground="{TemplateBinding Foreground}"
+                                                Margin="{TemplateBinding Padding}"/>
                                     <TextBlock x:Name="Placeholder"
-                                               Text="{TemplateBinding Tag}"
-                                               Foreground="{DynamicResource TextTertiaryBrush}"
-                                               Margin="{TemplateBinding Padding}"
-                                               VerticalAlignment="Center"
-                                               IsHitTestVisible="False"
-                                               Visibility="Collapsed"/>
+                                            Text="{TemplateBinding Tag}"
+                                            Foreground="{DynamicResource TextTertiaryBrush}"
+                                            Margin="{TemplateBinding Padding}"
+                                            VerticalAlignment="Center"
+                                            IsHitTestVisible="False"
+                                            Visibility="Collapsed"/>
                                 </Grid>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <MultiTrigger>
                                     <MultiTrigger.Conditions>
-                                        <Condition Property="Text"             Value=""/>
+                                        <Condition Property="Text"              Value=""/>
                                         <Condition Property="IsKeyboardFocused" Value="False"/>
                                     </MultiTrigger.Conditions>
                                     <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>

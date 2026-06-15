@@ -6,6 +6,7 @@
 
     <UserControl.Resources>
         <local:NullToVisibilityConverter x:Key="NullToVisibility"/>
+        <local:OrdinanceTypeColorConverter x:Key="TypeColorConverter"/>
     </UserControl.Resources>
 
     <DockPanel>
@@ -119,18 +120,18 @@
 
             <!-- ── SIDEBAR ──────────────────────────────────── -->
             <DockPanel Grid.Column="0"
-                       Background="{DynamicResource BgPrimaryBrush}">
+                    Background="{DynamicResource BgPrimaryBrush}">
 
                 <!-- Count header -->
                 <Border DockPanel.Dock="Top"
-                        Background="{DynamicResource BgSecondaryBrush}"
+                        Background="{DynamicResource BrandBrush}"
                         BorderBrush="{DynamicResource BorderThinBrush}"
                         BorderThickness="0,0,1,1"
-                        Padding="12,6">
+                        Padding="14,9">
                     <TextBlock x:Name="ResultCount"
-                        Text="All ordinances"
-                        FontSize="11" FontWeight="SemiBold"
-                        Foreground="{DynamicResource TextTertiaryBrush}"/>
+                            Text="All ordinances"
+                            FontSize="12" FontWeight="Bold"
+                            Foreground="White"/>
                 </Border>
 
                 <!-- Right border separator -->
@@ -138,9 +139,9 @@
                         Background="{DynamicResource BorderThinBrush}"/>
 
                 <ListBox x:Name="OrdinanceList"
-                         SelectionChanged="OrdinanceList_SelectionChanged"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         VirtualizingPanel.IsVirtualizing="True">
+                        SelectionChanged="OrdinanceList_SelectionChanged"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        VirtualizingPanel.IsVirtualizing="True">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="10,10,10,10">
@@ -154,35 +155,41 @@
 
                                 <!-- Ordinance number -->
                                 <TextBlock Grid.Row="0"
-                                           Text="{Binding OrdinanceNumber}"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource BrandBrush}"/>
+                                        Text="{Binding OrdinanceNumber}"
+                                        FontSize="11" FontWeight="SemiBold"
+                                        Foreground="{DynamicResource BrandBrush}"/>
 
                                 <!-- Title (truncated) -->
                                 <TextBlock Grid.Row="2"
-                                           Text="{Binding Title}"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           TextWrapping="NoWrap"
-                                           TextTrimming="CharacterEllipsis"/>
+                                        Text="{Binding Title}"
+                                        FontSize="12"
+                                        Foreground="{DynamicResource TextPrimaryBrush}"
+                                        TextWrapping="NoWrap"
+                                        TextTrimming="CharacterEllipsis"/>
 
                                 <!-- Status + Type pills -->
                                 <StackPanel Grid.Row="4" Orientation="Horizontal">
-                                    <!-- Status pill (colored dynamically in code-behind via tag)
-                                         We use a ContentControl with a DataTemplateSelector trick;
-                                         simpler: bind Tag to Status text and color in code. -->
                                     <Border x:Name="StatusPill"
-                                            CornerRadius="8" Padding="7,2" Margin="0,0,5,0"
+                                            CornerRadius="8" Padding="7,3" Margin="0,0,5,0"
                                             Background="{DynamicResource BgTertiaryBrush}">
                                         <TextBlock Text="{Binding Status}"
-                                                   FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                FontSize="10" FontWeight="Bold"
+                                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                                     </Border>
-                                    <Border CornerRadius="8" Padding="7,2"
-                                            Background="{DynamicResource BgTertiaryBrush}">
+
+                                    <Border CornerRadius="8" Padding="7,3"
+                                            Background="{Binding Type,
+                                                Converter={StaticResource TypeColorConverter},
+                                                ConverterParameter=bg}"
+                                            BorderThickness="1"
+                                            BorderBrush="{Binding Type,
+                                                Converter={StaticResource TypeColorConverter},
+                                                ConverterParameter=fg}">
                                         <TextBlock Text="{Binding Type}"
-                                                   FontSize="10"
-                                                   Foreground="{DynamicResource TextTertiaryBrush}"/>
+                                                FontSize="10" FontWeight="SemiBold"
+                                                Foreground="{Binding Type,
+                                                    Converter={StaticResource TypeColorConverter},
+                                                    ConverterParameter=fg}"/>
                                     </Border>
                                 </StackPanel>
                             </Grid>
