@@ -84,10 +84,9 @@
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBox x:Name="SearchBox" Width="300" Height="32"
-                             Style="{StaticResource PlaceholderTextBox}"
-                             Tag="Search by ID, title, subject, sponsor…"
-                             VerticalContentAlignment="Center"
-                             KeyDown="SearchBox_KeyDown"/>
+                            Style="{StaticResource PlaceholderTextBox}" FlowDirection="LeftToRight"
+                            Tag="Search by ID, title, subject, sponsor…"
+                            KeyDown="SearchBox_KeyDown"/>
                     <Button Content="Search" Width="72" Height="32" Margin="8,0,16,0"
                             Background="{DynamicResource BrandBrush}"
                             Foreground="White" BorderThickness="0"

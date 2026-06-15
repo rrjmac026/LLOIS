@@ -18,7 +18,7 @@
                  Colors come from theme brushes so they flip with dark mode. -->
             <!-- REPLACE the PlaceholderTextBox style entirely -->
             <Style x:Key="PlaceholderTextBox" TargetType="TextBox">
-                <Setter Property="Padding"          Value="8,6"/>
+                <Setter Property="Padding"          Value="8,0"/>
                 <Setter Property="FontSize"         Value="13"/>
                 <Setter Property="Foreground"       Value="{DynamicResource TextPrimaryBrush}"/>
                 <Setter Property="Background"       Value="{DynamicResource BgPrimaryBrush}"/>
@@ -40,9 +40,9 @@
                                                 BorderThickness="0"
                                                 Margin="{TemplateBinding Padding}"
                                                 Focusable="False"
+                                                VerticalAlignment="Center"
                                                 HorizontalScrollBarVisibility="Hidden"
-                                                VerticalScrollBarVisibility="Hidden"
-                                                VerticalContentAlignment="Center"/>
+                                                VerticalScrollBarVisibility="Hidden"/>
                                     <TextBlock x:Name="Placeholder"
                                             Text="{TemplateBinding Tag}"
                                             Foreground="{DynamicResource TextTertiaryBrush}"
