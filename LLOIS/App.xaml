@@ -34,12 +34,15 @@
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="6">
                                 <Grid>
-                                    <!-- PART_ContentHost must be a ScrollViewer with this exact name -->
                                     <ScrollViewer x:Name="PART_ContentHost"
+                                                Style="{x:Null}"
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Margin="{TemplateBinding Padding}"
-                                                TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                                Focusable="False"
+                                                HorizontalScrollBarVisibility="Hidden"
+                                                VerticalScrollBarVisibility="Hidden"
+                                                VerticalContentAlignment="Center"/>
                                     <TextBlock x:Name="Placeholder"
                                             Text="{TemplateBinding Tag}"
                                             Foreground="{DynamicResource TextTertiaryBrush}"
@@ -52,8 +55,8 @@
                             <ControlTemplate.Triggers>
                                 <MultiTrigger>
                                     <MultiTrigger.Conditions>
-                                        <Condition Property="Text"               Value=""/>
-                                        <Condition Property="IsKeyboardFocused"  Value="False"/>
+                                        <Condition Property="Text"              Value=""/>
+                                        <Condition Property="IsKeyboardFocused" Value="False"/>
                                     </MultiTrigger.Conditions>
                                     <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
                                 </MultiTrigger>
