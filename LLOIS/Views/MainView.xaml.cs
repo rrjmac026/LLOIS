@@ -16,8 +16,11 @@ public partial class MainView : UserControl
     private readonly User              _currentUser;
 
     // Sub-views created once and reused
-    private DashboardView?   _dashboardView;
-    private OrdinancesView?  _ordinancesView;
+    private DashboardView?        _dashboardView;
+    private OrdinancesView?       _ordinancesView;
+    private ReportsView?          _reportsView;
+    private UserManagementView?   _usersView;
+    private AuditLogView?         _auditLogView;
 
     public event Action? LogoutRequested;
 
@@ -126,15 +129,9 @@ public partial class MainView : UserControl
 
     private void NavDashboard_Click(object sender, RoutedEventArgs e)  => ShowDashboard();
     private void NavOrdinances_Click(object sender, RoutedEventArgs e) => ShowOrdinances();
-    private void NavReports_Click(object sender, RoutedEventArgs e)
-        => new ReportsWindow(_service) { Owner = Window.GetWindow(this) }.ShowDialog();
-    private void NavUsers_Click(object sender, RoutedEventArgs e)
-        => new UserManagementWindow(_auth) { Owner = Window.GetWindow(this) }.ShowDialog();
-    private void NavAudit_Click(object sender, RoutedEventArgs e)
-    {
-        AuditBadge.Visibility = Visibility.Collapsed;
-        new AuditLogWindow(_auth) { Owner = Window.GetWindow(this) }.ShowDialog();
-    }
+    private void NavReports_Click(object sender, RoutedEventArgs e)    => ShowReports();
+    private void NavUsers_Click(object sender, RoutedEventArgs e)      => ShowUsers();
+    private void NavAudit_Click(object sender, RoutedEventArgs e)      => ShowAuditLog();
 
     private void ShowDashboard()
     {
@@ -165,11 +162,56 @@ public partial class MainView : UserControl
         PageHost.Content = _ordinancesView;
     }
 
+    private void ShowReports()
+    {
+        PageTitleLabel.Text = "Reports";
+        SetNavActive("reports");
+
+        if (_reportsView is null)
+        {
+            _reportsView = new ReportsView(_service);
+        }
+
+        _reportsView.ReloadIfNeeded();
+        PageHost.Content = _reportsView;
+    }
+
+    private void ShowUsers()
+    {
+        PageTitleLabel.Text = "Users";
+        SetNavActive("users");
+
+        if (_usersView is null)
+        {
+            _usersView = new UserManagementView(_auth);
+        }
+
+        _usersView.ReloadIfNeeded();
+        PageHost.Content = _usersView;
+    }
+
+    private void ShowAuditLog()
+    {
+        PageTitleLabel.Text = "Audit Log";
+        SetNavActive("audit");
+        AuditBadge.Visibility = Visibility.Collapsed;
+
+        if (_auditLogView is null)
+        {
+            _auditLogView = new AuditLogView(_auth);
+        }
+
+        _auditLogView.ReloadIfNeeded();
+        PageHost.Content = _auditLogView;
+    }
+
     private void SetNavActive(string page)
     {
         NavDashboardBtn.Style  = page == "dashboard"  ? (Style)FindResource("SidebarNavBtnActive") : (Style)FindResource("SidebarNavBtn");
         NavOrdinancesBtn.Style = page == "ordinances" ? (Style)FindResource("SidebarNavBtnActive") : (Style)FindResource("SidebarNavBtn");
         NavReportsBtn.Style    = page == "reports"    ? (Style)FindResource("SidebarNavBtnActive") : (Style)FindResource("SidebarNavBtn");
+        NavUsersBtn.Style      = page == "users"      ? (Style)FindResource("SidebarNavBtnActive") : (Style)FindResource("SidebarNavBtn");
+        NavAuditBtn.Style      = page == "audit"      ? (Style)FindResource("SidebarNavBtnActive") : (Style)FindResource("SidebarNavBtn");
     }
 
     // ── Topbar search (delegates to ordinances view) ───────────────────────
