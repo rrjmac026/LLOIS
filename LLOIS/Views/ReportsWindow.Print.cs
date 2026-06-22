@@ -19,59 +19,6 @@ public partial class ReportsWindow
                 $"LLOIS Report — {tab}");
     }
 
-    private void ExportWordBtn_Click(object sender, RoutedEventArgs e)
-    {
-        var path = PickSavePath("Word Document (*.doc)|*.doc", ".doc", $"LLOIS_{CurrentTabTitle}");
-        if (path is null) return;
-        try
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("""
-                <html xmlns:o='urn:schemas-microsoft-com:office:office'
-                      xmlns:w='urn:schemas-microsoft-com:office:word'
-                      xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><meta charset='utf-8'>
-                <style>
-                  body{font-family:Calibri,sans-serif;font-size:10pt;}
-                  h1{font-size:14pt;color:#1a3a6b;margin-bottom:2px;}
-                  p.sub{font-size:9pt;color:#888;margin-top:0;}
-                  table{border-collapse:collapse;width:100%;}
-                  th{background:#1a3a6b;color:#fff;padding:5px 8px;font-size:9pt;text-align:left;}
-                  td{padding:4px 8px;font-size:9pt;border-bottom:1px solid #ddd;}
-                  tr.alt td{background:#f8f9ff;}
-                  p.total{font-weight:bold;margin-top:10px;}
-                </style></head><body>
-                """);
-
-            sb.AppendLine($"<h1>Local Legislative Ordinance Information System</h1>");
-            sb.AppendLine($"<p class='sub'>Report: {CurrentTabTitle} &nbsp;|&nbsp; Generated: {DateTime.Now:MMMM dd, yyyy}</p>");
-            sb.AppendLine("<table><tr>");
-            foreach (var col in Columns) sb.Append($"<th>{HtmlEncode(col.Header)}</th>");
-            sb.AppendLine("</tr>");
-
-            bool alt = false;
-            foreach (var o in _currentData)
-            {
-                sb.Append(alt ? "<tr class='alt'>" : "<tr>");
-                foreach (var col in Columns) sb.Append($"<td>{HtmlEncode(col.Value(o))}</td>");
-                sb.AppendLine("</tr>");
-                alt = !alt;
-            }
-
-            sb.AppendLine($"</table><p class='total'>Total: {_currentData.Count} ordinance(s)</p></body></html>");
-            File.WriteAllText(path, sb.ToString(), System.Text.Encoding.UTF8);
-
-            MessageBox.Show($"Word document exported to:\n{path}", "Export Successful",
-                MessageBoxButton.OK, MessageBoxImage.Information);
-            OpenFile(path);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Word export failed:\n{ex.Message}", "Error",
-                MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
     private FlowDocument BuildFlowDocument(string title)
     {
         var doc = new FlowDocument
