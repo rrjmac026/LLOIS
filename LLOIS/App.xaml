@@ -12,6 +12,7 @@
             <!-- ── Converters ──────────────────────────────────── -->
             <local:NullToVisibilityConverter x:Key="NullToVisibility"/>
             <local:OrdinanceTypeColorConverter x:Key="TypeColorConverter"/>
+            <local:StatusToBrushConverter x:Key="StatusBrushConverter"/>
 
             <!-- ── Shared TextBox with placeholder ─────────────── -->
             <Style x:Key="PlaceholderTextBox" TargetType="TextBox">

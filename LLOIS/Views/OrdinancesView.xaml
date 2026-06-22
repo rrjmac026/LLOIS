@@ -128,15 +128,8 @@
                                             TextTrimming="CharacterEllipsis"/>
 
                                     <StackPanel Grid.Row="4" Orientation="Horizontal">
-                                        <Border CornerRadius="8" Padding="7,3" Margin="0,0,5,0">
-                                            <Border.Background>
-                                                <MultiBinding>
-                                                    <MultiBinding.Converter>
-                                                        <local:StatusToBrushConverter/>
-                                                    </MultiBinding.Converter>
-                                                    <Binding Path="Status"/>
-                                                </MultiBinding>
-                                            </Border.Background>
+                                        <Border CornerRadius="8" Padding="7,3" Margin="0,0,5,0"
+                                                Background="{Binding Status, Converter={StaticResource StatusBrushConverter}}">
                                             <TextBlock Text="{Binding Status}"
                                                     FontSize="10" FontWeight="SemiBold"
                                                     Foreground="{DynamicResource TextSecondaryBrush}"/>

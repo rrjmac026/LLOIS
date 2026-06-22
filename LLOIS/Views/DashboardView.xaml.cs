@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using LLOIS.Models;
 using LLOIS.Services;
 
@@ -23,6 +24,9 @@ public partial class DashboardView : UserControl
     }
 
     public void Refresh() => _ = LoadAsync();
+
+    private void TotalCard_Click(object sender, MouseButtonEventArgs e)
+        => NavigateToOrdinances?.Invoke();
 
     private async Task LoadAsync()
     {

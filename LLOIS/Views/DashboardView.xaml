@@ -3,6 +3,16 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="{DynamicResource BgPrimaryBrush}">
 
+    <UserControl.Resources>
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background"      Value="{DynamicResource StatCardBgBrush}"/>
+            <Setter Property="BorderBrush"     Value="{DynamicResource StatCardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="10"/>
+            <Setter Property="Padding"         Value="18,16"/>
+        </Style>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,24,28,28">
 
@@ -20,7 +30,8 @@
             <UniformGrid Rows="1" Columns="3" Margin="0,0,0,20">
 
                 <!-- Total ordinances -->
-                <Border Style="{StaticResource StatCard}" Margin="0,0,10,0">
+                <Border Style="{StaticResource StatCard}" Margin="0,0,10,0"
+                        Cursor="Hand" MouseLeftButtonUp="TotalCard_Click">
                     <StackPanel>
                         <TextBlock Text="Total ordinances"
                                    FontSize="11" FontWeight="SemiBold"
@@ -237,15 +248,5 @@
 
         </StackPanel>
     </ScrollViewer>
-
-    <UserControl.Resources>
-        <Style x:Key="StatCard" TargetType="Border">
-            <Setter Property="Background"      Value="{DynamicResource StatCardBgBrush}"/>
-            <Setter Property="BorderBrush"     Value="{DynamicResource StatCardBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius"    Value="10"/>
-            <Setter Property="Padding"         Value="18,16"/>
-        </Style>
-    </UserControl.Resources>
 
 </UserControl>
