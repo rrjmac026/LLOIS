@@ -321,7 +321,6 @@
                         <ControlTemplate TargetType="ListBoxItem">
                             <Border x:Name="OuterBd"
                                 Background="{TemplateBinding Background}"
-                                BorderBrush="Transparent"
                                 BorderThickness="0,0,0,1"
                                 BorderBrush="{DynamicResource BorderThinBrush}">
                                 <ContentPresenter Margin="0"/>
