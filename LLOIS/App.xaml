@@ -5,18 +5,15 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <!-- Default to Light theme; swapped at runtime by ThemeService -->
-                <ResourceDictionary Source="Themes/LightTheme.xaml"/>
+                <!-- Default to Dark theme matching the new design; swapped at runtime by ThemeService -->
+                <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <!-- ── Converters ──────────────────────────────────── -->
             <local:NullToVisibilityConverter x:Key="NullToVisibility"/>
             <local:OrdinanceTypeColorConverter x:Key="TypeColorConverter"/>
 
-            <!-- ── Shared TextBox with placeholder ───────────────
-                 Tag = placeholder text.
-                 Colors come from theme brushes so they flip with dark mode. -->
-            <!-- REPLACE the PlaceholderTextBox style entirely -->
+            <!-- ── Shared TextBox with placeholder ─────────────── -->
             <Style x:Key="PlaceholderTextBox" TargetType="TextBox">
                 <Setter Property="Padding"          Value="8,0"/>
                 <Setter Property="FontSize"         Value="13"/>
@@ -70,10 +67,117 @@
                 </Setter>
             </Style>
 
+            <!-- ── Topbar search box (dark, borderless) ─────────── -->
+            <Style x:Key="TopbarSearchBox" TargetType="TextBox">
+                <Setter Property="Padding"         Value="10,0"/>
+                <Setter Property="FontSize"        Value="13"/>
+                <Setter Property="Foreground"      Value="#E2E8F8"/>
+                <Setter Property="Background"      Value="{DynamicResource TopbarSearchBgBrush}"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="CaretBrush"      Value="#E2E8F8"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TextBox">
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    BorderThickness="0"
+                                    CornerRadius="8">
+                                <Grid>
+                                    <ScrollViewer x:Name="PART_ContentHost"
+                                                Style="{x:Null}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Margin="{TemplateBinding Padding}"
+                                                Focusable="False"
+                                                VerticalAlignment="Center"
+                                                HorizontalScrollBarVisibility="Hidden"
+                                                VerticalScrollBarVisibility="Hidden"/>
+                                    <TextBlock x:Name="Placeholder"
+                                            Text="{TemplateBinding Tag}"
+                                            Foreground="#4B5280"
+                                            Margin="{TemplateBinding Padding}"
+                                            VerticalAlignment="Center"
+                                            IsHitTestVisible="False"
+                                            Visibility="Collapsed"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="Text"              Value=""/>
+                                        <Condition Property="IsKeyboardFocused" Value="False"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                                </MultiTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ── Sidebar nav button ──────────────────────────── -->
+            <Style x:Key="SidebarNavBtn" TargetType="Button">
+                <Setter Property="Height"          Value="38"/>
+                <Setter Property="Padding"         Value="16,0"/>
+                <Setter Property="FontSize"        Value="13"/>
+                <Setter Property="FontWeight"      Value="Normal"/>
+                <Setter Property="Foreground"      Value="#8A9BC0"/>
+                <Setter Property="Background"      Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Cursor"          Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="3,0,0,0"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="bd" Property="Background"
+                                            Value="{DynamicResource SidebarHoverBgBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="bd" Property="Background"
+                                            Value="{DynamicResource SidebarActiveBgBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ── Sidebar nav button ACTIVE state ─────────────── -->
+            <Style x:Key="SidebarNavBtnActive" TargetType="Button" BasedOn="{StaticResource SidebarNavBtn}">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Background" Value="{DynamicResource SidebarActiveBgBrush}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{DynamicResource SidebarAccentBrush}"
+                                    BorderThickness="3,0,0,0"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- ── Topbar button ──────────────────────────────── -->
             <Style x:Key="TopbarBtn" TargetType="Button">
                 <Setter Property="Padding"          Value="10,5"/>
-                <Setter Property="Margin"           Value="0,0,6,0"/>
+                <Setter Property="Margin"           Value="0,0,4,0"/>
                 <Setter Property="FontSize"         Value="12"/>
                 <Setter Property="FontWeight"       Value="Medium"/>
                 <Setter Property="Foreground"       Value="{DynamicResource TopbarBtnFgBrush}"/>
@@ -114,7 +218,7 @@
                 <Setter Property="FontSize"        Value="12"/>
                 <Setter Property="FontWeight"      Value="Medium"/>
                 <Setter Property="Foreground"      Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="Background"      Value="{DynamicResource BgPrimaryBrush}"/>
+                <Setter Property="Background"      Value="{DynamicResource BgSecondaryBrush}"/>
                 <Setter Property="BorderBrush"     Value="{DynamicResource BorderThinBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Cursor"          Value="Hand"/>
@@ -188,7 +292,7 @@
                 <Setter Property="Padding"         Value="8,5"/>
                 <Setter Property="FontSize"        Value="13"/>
                 <Setter Property="Foreground"      Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="Background"      Value="{DynamicResource BgPrimaryBrush}"/>
+                <Setter Property="Background"      Value="{DynamicResource BgSecondaryBrush}"/>
                 <Setter Property="BorderBrush"     Value="{DynamicResource BorderThinBrush}"/>
                 <Setter Property="BorderThickness" Value="1"/>
             </Style>
@@ -197,13 +301,13 @@
             <Style TargetType="DatePicker">
                 <Setter Property="Height"          Value="32"/>
                 <Setter Property="Foreground"      Value="{DynamicResource TextPrimaryBrush}"/>
-                <Setter Property="Background"      Value="{DynamicResource BgPrimaryBrush}"/>
+                <Setter Property="Background"      Value="{DynamicResource BgSecondaryBrush}"/>
                 <Setter Property="BorderBrush"     Value="{DynamicResource BorderThinBrush}"/>
             </Style>
 
             <!-- ── ListBox / ListBoxItem ─────────────────────── -->
             <Style TargetType="ListBox">
-                <Setter Property="Background"      Value="{DynamicResource BgPrimaryBrush}"/>
+                <Setter Property="Background"      Value="{DynamicResource BgSecondaryBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
                 <Setter Property="Foreground"      Value="{DynamicResource TextPrimaryBrush}"/>
             </Style>
@@ -218,13 +322,9 @@
                             <Border x:Name="OuterBd"
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="Transparent"
-                                BorderThickness="3,0,0,0">
-                                <Border x:Name="InnerBd"
-                                        Background="Transparent"
-                                        BorderBrush="{DynamicResource BorderThinBrush}"
-                                        BorderThickness="0,0,0,1">
-                                    <ContentPresenter Margin="0"/>
-                                </Border>
+                                BorderThickness="0,0,0,1"
+                                BorderBrush="{DynamicResource BorderThinBrush}">
+                                <ContentPresenter Margin="0"/>
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
@@ -233,9 +333,7 @@
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter TargetName="OuterBd" Property="Background"
-                                            Value="{DynamicResource SidebarActiveBgBrush}"/>
-                                    <Setter TargetName="OuterBd" Property="BorderBrush"
-                                            Value="{DynamicResource SidebarAccentBrush}"/>
+                                            Value="{DynamicResource BgActiveBrush}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>

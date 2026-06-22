@@ -1,0 +1,251 @@
+﻿<UserControl x:Class="LLOIS.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource BgPrimaryBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,28">
+
+            <!-- ── Greeting ──────────────────────────────────────── -->
+            <TextBlock x:Name="GreetingLabel"
+                       Text="Good morning, admin"
+                       FontSize="20" FontWeight="Bold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+            <TextBlock Text="Here's what's happening in the system today."
+                       FontSize="13"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="0,4,0,24"/>
+
+            <!-- ── Top stat cards ─────────────────────────────────── -->
+            <UniformGrid Rows="1" Columns="3" Margin="0,0,0,20">
+
+                <!-- Total ordinances -->
+                <Border Style="{StaticResource StatCard}" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Total ordinances"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,10"/>
+                        <TextBlock x:Name="TotalCount"
+                                   Text="—"
+                                   FontSize="36" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="All records"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- In effect -->
+                <Border Style="{StaticResource StatCard}" Margin="5,0,5,0">
+                    <StackPanel>
+                        <TextBlock Text="In effect"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,10"/>
+                        <TextBlock x:Name="InEffectCount"
+                                   Text="—"
+                                   FontSize="36" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <Border Background="{DynamicResource StatusInEffectBgBrush}"
+                                CornerRadius="10" Padding="8,3"
+                                HorizontalAlignment="Left" Margin="0,6,0,0">
+                            <TextBlock Text="Active"
+                                       FontSize="10" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource StatusInEffectFgBrush}"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- This year -->
+                <Border Style="{StaticResource StatCard}" Margin="10,0,0,0">
+                    <StackPanel>
+                        <TextBlock x:Name="ThisYearLabel"
+                                   Text="This year"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,10"/>
+                        <TextBlock x:Name="ThisYearCount"
+                                   Text="—"
+                                   FontSize="36" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock x:Name="ThisYearSub"
+                                   Text="Added this year"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+            </UniformGrid>
+
+            <!-- ── Bottom row: By status + Recent actions ────────── -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- By status card -->
+                <Border Grid.Column="0" Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="By status"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Margin="0,0,0,14"/>
+
+                        <!-- In Effect row -->
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock DockPanel.Dock="Left" Text="In effect"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Width="90"/>
+                            <TextBlock x:Name="StatusInEffectNum"
+                                       DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Right"/>
+                            <Border x:Name="StatusInEffectPill"
+                                    DockPanel.Dock="Right"
+                                    Background="{DynamicResource StatusInEffectBgBrush}"
+                                    CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusInEffectPct"
+                                           Text="—"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="{DynamicResource StatusInEffectFgBrush}"/>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Amended row -->
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock DockPanel.Dock="Left" Text="Amended"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Width="90"/>
+                            <TextBlock x:Name="StatusAmendedNum"
+                                       DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Right"/>
+                            <Border Background="{DynamicResource StatusAmendedBgBrush}"
+                                    DockPanel.Dock="Right"
+                                    CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusAmendedPct"
+                                           Text="—"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="{DynamicResource StatusAmendedFgBrush}"/>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Repealed row -->
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock DockPanel.Dock="Left" Text="Repealed"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Width="90"/>
+                            <TextBlock x:Name="StatusRepealedNum"
+                                       DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Right"/>
+                            <Border Background="{DynamicResource StatusRepealedBgBrush}"
+                                    DockPanel.Dock="Right"
+                                    CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusRepealedPct"
+                                           Text="—"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="{DynamicResource StatusRepealedFgBrush}"/>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Under Review row -->
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="Under review"
+                                       FontSize="12" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Width="90"/>
+                            <TextBlock x:Name="StatusReviewNum"
+                                       DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Right"/>
+                            <Border Background="{DynamicResource StatusReviewBgBrush}"
+                                    DockPanel.Dock="Right"
+                                    CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusReviewPct"
+                                           Text="—"
+                                           FontSize="10" FontWeight="Bold"
+                                           Foreground="{DynamicResource StatusReviewFgBrush}"/>
+                            </Border>
+                        </DockPanel>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Recent actions card -->
+                <Border Grid.Column="2" Style="{StaticResource StatCard}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top"
+                                   Text="Recent actions"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Margin="0,0,0,14"/>
+                        <ItemsControl x:Name="RecentActionsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <DockPanel Margin="0,0,0,10" LastChildFill="False">
+                                        <TextBlock DockPanel.Dock="Right"
+                                                   Text="{Binding TimeAgo}"
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Description}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </DockPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </Border>
+
+            </Grid>
+
+            <!-- ── Info tip ────────────────────────────────────── -->
+            <Border Margin="0,16,0,0"
+                    Background="{DynamicResource BgSecondaryBrush}"
+                    BorderBrush="{DynamicResource BorderThinBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,10">
+                <TextBlock x:Name="RoleTipLabel"
+                           Foreground="{DynamicResource TextTertiaryBrush}"
+                           FontSize="11"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+    <UserControl.Resources>
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background"      Value="{DynamicResource StatCardBgBrush}"/>
+            <Setter Property="BorderBrush"     Value="{DynamicResource StatCardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="10"/>
+            <Setter Property="Padding"         Value="18,16"/>
+        </Style>
+    </UserControl.Resources>
+
+</UserControl>
