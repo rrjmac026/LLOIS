@@ -41,19 +41,27 @@ public partial class MainView : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Populate sidebar user area
-        SidebarUsernameLabel.Text = _currentUser.Username;
-        SidebarRoleLabel.Text     = _currentUser.Role.ToString();
-        SidebarAvatarLabel.Text   = _currentUser.Username.Length > 0
+        // Populate sidebar user area (via template FindName)
+        UserChipBtn.ApplyTemplate();
+
+        var avatar   = UserChipBtn.Template.FindName("SidebarAvatarLabel",   UserChipBtn) as TextBlock;
+        var username = UserChipBtn.Template.FindName("SidebarUsernameLabel", UserChipBtn) as TextBlock;
+        var role     = UserChipBtn.Template.FindName("SidebarRoleLabel",     UserChipBtn) as TextBlock;
+
+        string initial = _currentUser.Username.Length > 0
             ? _currentUser.Username[0].ToString().ToUpper() : "?";
 
-        // Populate topbar user area
+        if (avatar   != null) avatar.Text   = initial;
+        if (username != null) username.Text = _currentUser.Username;
+        if (role     != null) role.Text     = _currentUser.Role.ToString();
+
+        // Populate topbar and dropdown
         TopbarUsernameLabel.Text = _currentUser.Username;
         DropdownNameLabel.Text   = _currentUser.Username;
         DropdownRoleLabel.Text   = _currentUser.Role.ToString();
-        DropdownAvatarLabel.Text = SidebarAvatarLabel.Text;
+        DropdownAvatarLabel.Text = initial;
 
-        bool isAdmin  = _currentUser.Role == UserRole.Admin;
+        bool isAdmin = _currentUser.Role == UserRole.Admin;
         AdminSectionLabel.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
         NavUsersBtn.Visibility       = isAdmin ? Visibility.Visible : Visibility.Collapsed;
         NavAuditBtn.Visibility       = isAdmin ? Visibility.Visible : Visibility.Collapsed;
