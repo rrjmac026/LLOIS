@@ -185,7 +185,7 @@
                     BorderThickness="0,0,0,1">
                 <DockPanel VerticalAlignment="Center">
 
-                    <!-- Right: theme + account popup -->
+                    <!-- Right: search + theme toggle -->
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                                 VerticalAlignment="Center">
 
@@ -218,25 +218,9 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <!-- Account popup trigger -->
-                        <Button x:Name="TopbarUserBtn"
-                                Style="{StaticResource TopbarBtn}"
-                                Margin="4,0,0,0"
-                                Click="UserChipBtn_Click">
-                            <StackPanel Orientation="Horizontal">
-                                <Ellipse Width="6" Height="6" Fill="#4ADE80"
-                                         VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock x:Name="TopbarUsernameLabel"
-                                           Foreground="{DynamicResource TopbarUserFgBrush}"
-                                           FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text=" ▾" Foreground="#4B5280"
-                                           FontSize="10" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- User dropdown popup -->
+                        <!-- User dropdown popup (triggered from the sidebar user chip) -->
                         <Popup x:Name="UserPopup"
-                               PlacementTarget="{Binding ElementName=TopbarUserBtn}"
+                               PlacementTarget="{Binding ElementName=ThemeToggleBtn}"
                                Placement="Bottom"
                                StaysOpen="False"
                                AllowsTransparency="True">

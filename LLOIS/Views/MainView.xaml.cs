@@ -58,8 +58,7 @@ public partial class MainView : UserControl
         if (username != null) username.Text = _currentUser.Username;
         if (role     != null) role.Text     = _currentUser.Role.ToString();
 
-        // Populate topbar and dropdown
-        TopbarUsernameLabel.Text = _currentUser.Username;
+        // Populate dropdown (now triggered only from the sidebar user chip)
         DropdownNameLabel.Text   = _currentUser.Username;
         DropdownRoleLabel.Text   = _currentUser.Role.ToString();
         DropdownAvatarLabel.Text = initial;
