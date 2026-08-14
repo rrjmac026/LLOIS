@@ -46,6 +46,7 @@ public static class BackupService
             ExportAuditLogsToExcel(auditLogs, Path.Combine(dataDir, "audit_logs.xlsx"));
 
             // Download ordinance PDFs from Supabase Storage
+            // Download ordinance PDFs
             progress?.Report("Downloading ordinance PDFs...");
             var ordinancePdfDir = Path.Combine(filesDir, "OrdinancePdfs");
             Directory.CreateDirectory(ordinancePdfDir);
@@ -55,19 +56,19 @@ public static class BackupService
             {
                 try
                 {
-                    var fileName = Path.GetFileName(new Uri(o.DocumentPath!).LocalPath);
+                    var fileName = GetSafeFileName(o.DocumentPath!, o.OrdinanceNumber, "pdf");
                     var dest = Path.Combine(ordinancePdfDir, fileName);
                     await StorageService.DownloadFileAsync(o.DocumentPath!, dest);
                     pdfCount++;
                 }
                 catch
                 {
-                    // Skip files that fail to download (e.g. deleted from storage), don't fail the whole backup
+                    // Skip files that fail to download
                 }
             }
             progress?.Report($"Downloaded {pdfCount} ordinance PDF(s).");
 
-            // Download committee report attachments from Supabase Storage
+            // Download committee report attachments
             progress?.Report("Downloading committee report files...");
             var committeeFilesDir = Path.Combine(filesDir, "CommitteeReportFiles");
             Directory.CreateDirectory(committeeFilesDir);
@@ -79,7 +80,7 @@ public static class BackupService
                 {
                     try
                     {
-                        var fileName = Path.GetFileName(new Uri(a.FilePath!).LocalPath);
+                        var fileName = GetSafeFileName(a.FilePath!, $"{r.ReportNumber}_{a.FileName}", null);
                         var dest = Path.Combine(committeeFilesDir, fileName);
                         await StorageService.DownloadFileAsync(a.FilePath!, dest);
                         attachmentCount++;
@@ -92,7 +93,7 @@ public static class BackupService
             }
             progress?.Report($"Downloaded {attachmentCount} committee report file(s).");
 
-            // Download resolution documents from Supabase Storage
+            // Download resolution documents
             progress?.Report("Downloading resolution files...");
             var resolutionFilesDir = Path.Combine(filesDir, "ResolutionFiles");
             Directory.CreateDirectory(resolutionFilesDir);
@@ -102,7 +103,7 @@ public static class BackupService
             {
                 try
                 {
-                    var fileName = Path.GetFileName(new Uri(r.DocumentPath!).LocalPath);
+                    var fileName = GetSafeFileName(r.DocumentPath!, r.ResolutionNumber, "pdf");
                     var dest = Path.Combine(resolutionFilesDir, fileName);
                     await StorageService.DownloadFileAsync(r.DocumentPath!, dest);
                     resolutionFileCount++;
@@ -287,4 +288,24 @@ public static class BackupService
         ws.Columns().AdjustToContents();
         wb.SaveAs(path);
     }
+
+    private static string GetSafeFileName(string url, string fallbackBaseName, string? fallbackExtension)
+    {
+        if (url.Contains("drive.google.com"))
+        {
+            var ext = string.IsNullOrEmpty(fallbackExtension) ? "" : $".{fallbackExtension}";
+            return SanitizeFileName($"{fallbackBaseName}{ext}");
+        }
+
+        return Path.GetFileName(new Uri(url).LocalPath);
+    }
+
+    private static string SanitizeFileName(string name)
+    {
+        foreach (var c in Path.GetInvalidFileNameChars())
+            name = name.Replace(c, '_');
+        return name;
+    }
+
+    
 }

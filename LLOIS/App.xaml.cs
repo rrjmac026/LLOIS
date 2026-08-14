@@ -9,7 +9,7 @@ using LLOIS.Views;
 
 public partial class App : Application
 {
-    public const string CurrentVersion = "1.3.4";
+    public const string CurrentVersion = "1.3.6";
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -37,6 +37,7 @@ public partial class App : Application
         var shell = new ShellWindow();
         shell.Show();
     }
+    
 
     private void RegisterGlobalExceptionHandlers()
     {
