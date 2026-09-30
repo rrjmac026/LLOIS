@@ -2,22 +2,19 @@ namespace LLOIS.Views;
 
 using System.Windows;
 using System.Windows.Controls;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class FeedbackView : UserControl
 {
     private readonly IFeedbackService _service;
-    private readonly User _currentUser;
 
-    public FeedbackView(IFeedbackService service, User currentUser)
+    public FeedbackView(IFeedbackService service)
     {
         InitializeComponent();
         _service = service;
-        _currentUser = currentUser;
     }
 
-    private void SubmitBtn_Click(object sender, RoutedEventArgs e)
+    private async void SubmitBtn_Click(object sender, RoutedEventArgs e)
     {
         SuccessBanner.Visibility = Visibility.Collapsed;
 
@@ -30,20 +27,17 @@ public partial class FeedbackView : UserControl
 
         var type = (TypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() switch
         {
-            "Bug"        => FeedbackType.Bug,
-            "Suggestion" => FeedbackType.Suggestion,
-            _            => FeedbackType.Concern
+            "Bug"        => ApiFeedbackType.Bug,
+            "Suggestion" => ApiFeedbackType.Suggestion,
+            _            => ApiFeedbackType.Concern
         };
 
+        var button = (Button)sender;
+        button.IsEnabled = false;   // block double-submits while the request is in flight
         try
         {
-            _service.Submit(new Feedback
-            {
-                SubmittedBy = _currentUser.Username,
-                Type        = type,
-                Message     = MessageTextBox.Text.Trim(),
-                CreatedAt   = DateTime.UtcNow
-            });
+            // The server fills in submitted_by (from the token) and created_at.
+            await _service.SubmitAsync(type, MessageTextBox.Text.Trim());
 
             MessageTextBox.Text = "";
             TypeCombo.SelectedIndex = 0;
@@ -51,9 +45,13 @@ public partial class FeedbackView : UserControl
         }
         catch (Exception ex)
         {
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (!ConnectionFailureHandler.HandleIfApiFailure(ex))
                 MessageBox.Show($"Failed to submit: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            button.IsEnabled = true;
         }
     }
 }

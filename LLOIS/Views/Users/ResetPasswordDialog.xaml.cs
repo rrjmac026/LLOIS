@@ -20,8 +20,8 @@ public partial class ResetPasswordDialog : Window
         { ShowErr("Password is required."); return; }
         if (PasswordBox.Password != ConfirmBox.Password)
         { ShowErr("Passwords do not match."); return; }
-        if (PasswordBox.Password.Length < 6)
-        { ShowErr("Minimum 6 characters required."); return; }
+        if (PasswordBox.Password.Length < 8)   // Laravel requires 8+
+        { ShowErr("Minimum 8 characters required."); return; }
 
         NewPassword = PasswordBox.Password;
         DialogResult = true;

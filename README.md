@@ -1,4 +1,4 @@
-# LLOIS — Local Legislation Ordinance Information System
+# LLOIS — Damulog Legislative Information System
 
 A desktop application for document management and legal tracking of ordinances passed by a Sanggunian (city/municipal legislative council). LLOIS centralizes the encoding, tracking, searching, and reporting of local ordinances — including their full amendment history, legal status, and inter-ordinance relationships.
 
@@ -27,9 +27,11 @@ A desktop application for document management and legal tracking of ordinances p
 
 ## Overview
 
-LLOIS is designed to serve local government units (LGUs) in the Philippines that need a structured, searchable, and legally traceable repository of enacted ordinances. It addresses the common problem of ordinances being stored as scattered physical documents or unorganized digital files — with no easy way to track which laws have been amended, superseded, or repealed.
+LLOIS (Damulog Legislative Information System) is a desktop records-management system for local government legislative offices in the Philippines. It gives staff one searchable place to encode, organize, review, and retrieve ordinances and related legislative documents instead of relying on scattered paper files or unstructured folders.
 
-The system is built with **C#** and **WPF** (.NET) with a **PostgreSQL** database backend, designed for deployment in government or infrastructure-sector environments.
+The system covers the ordinance lifecycle from initial encoding through approval, publication, amendment, supersession, and repeal. Each record can include its legal metadata, status, sponsor, committee, important dates, attached PDF, and version history. Users can also manage resolutions, minutes, committee reports, feedback, and audit activity from the same application.
+
+LLOIS uses role-based access so administrators, legislative encoders, legal or reviewing staff, and read-only viewers have the appropriate level of access. It supports searchable records, document links, reports, backups, activity tracking, and controlled updates, helping an LGU maintain a reliable and traceable digital legislative repository.
 
 ---
 

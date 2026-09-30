@@ -2,6 +2,7 @@ namespace LLOIS.Services;
 
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using ClosedXML.Excel;
 using LLOIS.Data;
 using LLOIS.Models;
@@ -58,7 +59,7 @@ public static class BackupService
                 {
                     var fileName = GetSafeFileName(o.DocumentPath!, o.OrdinanceNumber, "pdf");
                     var dest = Path.Combine(ordinancePdfDir, fileName);
-                    await StorageService.DownloadFileAsync(o.DocumentPath!, dest);
+                    await DownloadFileAsync(o.DocumentPath!, dest);
                     pdfCount++;
                 }
                 catch
@@ -82,7 +83,7 @@ public static class BackupService
                     {
                         var fileName = GetSafeFileName(a.FilePath!, $"{r.ReportNumber}_{a.FileName}", null);
                         var dest = Path.Combine(committeeFilesDir, fileName);
-                        await StorageService.DownloadFileAsync(a.FilePath!, dest);
+                        await DownloadFileAsync(a.FilePath!, dest);
                         attachmentCount++;
                     }
                     catch
@@ -105,7 +106,7 @@ public static class BackupService
                 {
                     var fileName = GetSafeFileName(r.DocumentPath!, r.ResolutionNumber, "pdf");
                     var dest = Path.Combine(resolutionFilesDir, fileName);
-                    await StorageService.DownloadFileAsync(r.DocumentPath!, dest);
+                    await DownloadFileAsync(r.DocumentPath!, dest);
                     resolutionFileCount++;
                 }
                 catch
@@ -305,6 +306,35 @@ public static class BackupService
         foreach (var c in Path.GetInvalidFileNameChars())
             name = name.Replace(c, '_');
         return name;
+    }
+
+        private static async Task DownloadFileAsync(string publicUrl, string destinationPath)
+    {
+        using var client = new HttpClient();
+
+        var actualDownloadUrl = publicUrl;
+
+        if (publicUrl.Contains("drive.google.com"))
+        {
+            var fileId = ExtractDriveFileId(publicUrl);
+            if (fileId is not null)
+                actualDownloadUrl = $"https://drive.google.com/uc?export=download&id={fileId}";
+        }
+
+        var response = await client.GetAsync(actualDownloadUrl);
+        response.EnsureSuccessStatusCode();
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        await File.WriteAllBytesAsync(destinationPath, bytes);
+    }
+
+    private static string? ExtractDriveFileId(string driveUrl)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(driveUrl, @"/d/([a-zA-Z0-9_-]+)");
+        if (match.Success) return match.Groups[1].Value;
+
+        match = System.Text.RegularExpressions.Regex.Match(driveUrl, @"[?&]id=([a-zA-Z0-9_-]+)");
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     

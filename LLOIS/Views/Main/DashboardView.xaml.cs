@@ -1,36 +1,24 @@
 ﻿namespace LLOIS.Views;
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class DashboardView : UserControl
 {
-    private readonly IOrdinanceService       _ordinanceService;
-    private readonly IResolutionService      _resolutionService;
-    private readonly ICommitteeReportService _reportService;
-    private readonly User                    _currentUser;
+    private readonly IDashboardService _dashboard;
+    private readonly ApiUser           _currentUser;
 
     public event Action? NavigateToOrdinances;
     public event Action? NavigateToResolutions;
     public event Action? NavigateToCommitteeReports;
 
-    public DashboardView(
-        IOrdinanceService ordinanceService,
-        IResolutionService resolutionService,
-        ICommitteeReportService reportService,
-        User user)
+    public DashboardView(IDashboardService dashboard, ApiUser user)
     {
         InitializeComponent();
-        _ordinanceService  = ordinanceService;
-        _resolutionService = resolutionService;
-        _reportService     = reportService;
-        _currentUser       = user;
+        _dashboard   = dashboard;
+        _currentUser = user;
     }
 
     public void Refresh() => _ = LoadAsync();
@@ -52,36 +40,27 @@ public partial class DashboardView : UserControl
 
         try
         {
-            var ordinancesTask = Task.Run(() => _ordinanceService.Search("").ToList());
-            var resolutionsTask = Task.Run(() => _resolutionService.Search("").ToList());
-            var reportsTask = Task.Run(() => _reportService.Search("").ToList());
-
-            await Task.WhenAll(ordinancesTask, resolutionsTask, reportsTask);
-
-            var ordinances  = ordinancesTask.Result;
-            var resolutions = resolutionsTask.Result;
-            var reports     = reportsTask.Result;
-
-            int total     = ordinances.Count;
-            int inEffect  = ordinances.Count(o => o.Status == OrdinanceStatus.InEffect);
-            int amended   = ordinances.Count(o => o.Status == OrdinanceStatus.Amended);
-            int repealed  = ordinances.Count(o => o.Status == OrdinanceStatus.Repealed);
-            int review    = ordinances.Count(o => o.Status == OrdinanceStatus.UnderReview);
-            int thisYear  = ordinances.Count(o => o.DatePassed?.Year == DateTime.Now.Year);
+            // One server-side aggregate instead of downloading every list and counting here.
+            var d = await _dashboard.GetAsync();
+            var year = DateTime.Now.Year;
 
             // Module cards
-            OrdinanceCount.Text  = total.ToString();
-            OrdinanceSub.Text    = $"{thisYear} added in {DateTime.Now.Year}";
+            OrdinanceCount.Text  = d.Ordinances.Total.ToString();
+            OrdinanceSub.Text    = $"{d.Ordinances.ThisYear} added in {year}";
 
-            ResolutionCount.Text = resolutions.Count.ToString();
-            int resThisYear = resolutions.Count(r => r.DateApproved?.Year == DateTime.Now.Year);
-            ResolutionSub.Text   = $"{resThisYear} added in {DateTime.Now.Year}";
+            ResolutionCount.Text = d.Resolutions.Total.ToString();
+            ResolutionSub.Text   = $"{d.Resolutions.ThisYear} added in {year}";
 
-            ReportCount.Text     = reports.Count.ToString();
-            int repThisYear = reports.Count(r => r.Date?.Year == DateTime.Now.Year);
-            ReportSub.Text        = $"{repThisYear} added in {DateTime.Now.Year}";
+            ReportCount.Text     = d.CommitteeReports.Total.ToString();
+            ReportSub.Text       = $"{d.CommitteeReports.ThisYear} added in {year}";
 
             // By status (ordinances only)
+            int total    = d.Ordinances.Total;
+            int inEffect = d.Ordinances.CountFor("in_effect");
+            int amended  = d.Ordinances.CountFor("amended");
+            int repealed = d.Ordinances.CountFor("repealed");
+            int review   = d.Ordinances.CountFor("under_review");
+
             string Pct(int n) => total > 0 ? $"{(int)Math.Round(n * 100.0 / total)}%" : "0%";
             StatusInEffectNum.Text = inEffect.ToString();
             StatusInEffectPct.Text = Pct(inEffect);
@@ -92,55 +71,44 @@ public partial class DashboardView : UserControl
             StatusReviewNum.Text   = review.ToString();
             StatusReviewPct.Text   = Pct(review);
 
-            RoleTipLabel.Text = _currentUser.Role switch
+            RoleTipLabel.Text = _currentUser.RoleName switch
             {
-                UserRole.Admin   => "The sidebar shows different items per role — Admin sees Users + Audit log, Encoder sees Ordinances + Reports, Viewer only sees Dashboard + Ordinances.",
-                UserRole.Encoder => "You can add, edit, and add amendments to ordinances. Use the Ordinances page to manage records.",
-                _                => "You have read-only access to the ordinances. Contact an administrator to request changes."
+                "Admin" or "SuperAdmin" => "The sidebar shows different items per role — Admin sees Users + Audit log, Encoder sees Ordinances + Reports, Viewer only sees Dashboard + Ordinances.",
+                "Encoder"               => "You can add and edit ordinances, resolutions, minutes, and committee reports from their pages.",
+                _                       => "You have read-only access to the records. Contact an administrator to request changes."
             };
 
-            // Recent actions across all three modules
-            var recentItems = ordinances
-                .Where(o => o.DatePassed.HasValue)
-                .Select(o => new RecentActionItem
-                {
-                    Description = $"📜 {o.OrdinanceNumber} — {o.Status}",
-                    When        = o.DatePassed!.Value.ToDateTime(TimeOnly.MinValue)
-                })
-                .Concat(resolutions
-                    .Where(r => r.DateApproved.HasValue)
-                    .Select(r => new RecentActionItem
-                    {
-                        Description = $"🗳 Resolution {r.ResolutionNumber}",
-                        When        = r.DateApproved!.Value.ToDateTime(TimeOnly.MinValue)
-                    }))
-                .Concat(reports
-                    .Where(r => r.Date.HasValue)
-                    .Select(r => new RecentActionItem
-                    {
-                        Description = $"🗂 {r.ReportNumber} — {r.Subject}",
-                        When        = r.Date!.Value.ToDateTime(TimeOnly.MinValue)
-                    }))
-                .OrderByDescending(x => x.When)
-                .Take(6)
-                .Select(x => new RecentActionItem
-                {
-                    Description = x.Description,
-                    TimeAgo     = FormatTimeAgo(x.When)
-                })
-                .ToList();
-
-            RecentActionsList.ItemsSource = recentItems;
+            // Recent activity (already merged, sorted and trimmed to 6 by the server)
+            RecentActionsList.ItemsSource = d.Recent.Select(r => new RecentActionItem
+            {
+                Description = Describe(r),
+                TimeAgo     = FormatTimeAgo(r.Date.ToDateTime(TimeOnly.MinValue))
+            }).ToList();
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading dashboard data:\n{ex.Message}", "Error",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+
+    private static string Describe(ApiDashboardRecent r) => r.Type switch
+    {
+        "ordinance"        => $"📜 {r.Number} — {PrettyStatus(r.Detail)}",
+        "resolution"       => $"🗳 Resolution {r.Number}",
+        "committee_report" => $"🗂 {r.Number} — {r.Detail}",
+        _                  => r.Number
+    };
+
+    // "in_effect" -> "In Effect"
+    private static string PrettyStatus(string? status) =>
+        string.IsNullOrEmpty(status)
+            ? ""
+            : string.Join(' ', status.Split('_', StringSplitOptions.RemoveEmptyEntries)
+                .Select(w => char.ToUpper(w[0]) + w[1..]));
 
     private static string FormatTimeAgo(DateTime dt)
     {
@@ -154,8 +122,7 @@ public partial class DashboardView : UserControl
 
     private class RecentActionItem
     {
-        public string   Description { get; set; } = "";
-        public string   TimeAgo     { get; set; } = "";
-        public DateTime When;
+        public string Description { get; set; } = "";
+        public string TimeAgo     { get; set; } = "";
     }
 }

@@ -1,7 +1,6 @@
 namespace LLOIS.Views;
 
 using System.Windows;
-using LLOIS.Models;
 
 public partial class ReportsView
 {
@@ -93,22 +92,8 @@ public partial class ReportsView
 
             doc.Save(path);
 
-            var tabTitle = CurrentTabTitle;
-            var recordCount = _currentData.Count;
-
-            _ = Task.Run(() =>
-            {
-                try
-                {
-                    _auth.LogAction(_currentUser, "EXPORT_PDF",
-                        $"Exported {tabTitle} report to PDF ({recordCount} records)");
-                }
-                catch (Exception ex)
-                {
-                    Dispatcher.Invoke(() => MessageBox.Show($"Audit log failed:\n{ex.Message}",
-                        "Debug", MessageBoxButton.OK, MessageBoxImage.Warning));
-                }
-            });
+            LogReportAction("Report Exported (PDF)",
+                $"Exported {CurrentTabTitle} report to PDF ({_currentData.Count} records)");
 
             MessageBox.Show($"PDF exported to:\n{path}", "Export Successful",
                 MessageBoxButton.OK, MessageBoxImage.Information);
@@ -168,21 +153,8 @@ public partial class ReportsView
             ws.Columns().AdjustToContents();
             wb.SaveAs(path);
 
-            var tabTitle = CurrentTabTitle;
-            var recordCount = _currentData.Count;
-            _ = Task.Run(() =>
-            {
-                try
-                {
-                    _auth.LogAction(_currentUser, "EXPORT_EXCEL",
-                        $"Exported {tabTitle} report to Excel ({recordCount} records)");
-                }
-                catch (Exception ex)
-                {
-                    Dispatcher.Invoke(() => MessageBox.Show($"Audit log failed:\n{ex.Message}",
-                        "Debug", MessageBoxButton.OK, MessageBoxImage.Warning));
-                }
-            });
+            LogReportAction("Report Exported (Excel)",
+                $"Exported {CurrentTabTitle} report to Excel ({_currentData.Count} records)");
 
             MessageBox.Show($"Excel exported to:\n{path}", "Export Successful",
                 MessageBoxButton.OK, MessageBoxImage.Information);

@@ -1,81 +1,49 @@
 namespace LLOIS.Services;
 
 using System;
-using System.Data.Common;
 using System.Linq;
-using System.Net.Sockets;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
-using Npgsql;
 using LLOIS;
 
 public static class ConnectionFailureHandler
 {
     public static event Action? ConnectionLost;
+    public static event Action? SessionExpired;
 
     public static void RaiseConnectionLost() => ConnectionLost?.Invoke();
 
-    private static readonly string[] ConnectionFailureMessages =
+    private static readonly string[] NetworkFailureMessages =
     {
         "failed to open",
         "unable to connect",
         "connection was lost",
         "connection reset",
-        "could not open connection",
         "could not connect",
-        "connection string",
         "server was not found",
         "host not found",
         "no such host",
-        "connection is broken",
-        "operation timed out",
         "network is unreachable",
         "network unreachable",
-        "no route to host"
+        "no route to host",
+        "operation timed out",
+        "the operation was canceled"
     };
 
-    // Checked BEFORE the generic connection keywords, since messages like
-    // "too many connections" or "disk full" would otherwise be misclassified
-    // as a plain lost-connection error.
-    private static readonly string[] DatabaseFullMessages =
-    {
-        "database is full",
-        "out of disk",
-        "disk full",
-        "no space left",
-        "quota exceeded",
-        "storage limit",
-        "storage quota",
-        "disk quota",
-        "too many connections",
-        "too many clients",
-        "remaining connection slots",
-        "connection slots are reserved",
-        "sorry, too many clients"
-    };
-
-    public static bool IsDatabaseFullFailure(Exception? exception)
+    public static bool IsSessionExpired(Exception? exception)
     {
         if (exception is null) return false;
 
         if (exception is AggregateException aggregate)
-            return aggregate.InnerExceptions.Any(IsDatabaseFullFailure);
+            return aggregate.InnerExceptions.Any(IsSessionExpired);
 
         if (exception is TargetInvocationException tie && tie.InnerException is not null)
-            return IsDatabaseFullFailure(tie.InnerException);
+            return IsSessionExpired(tie.InnerException);
 
-        if (IsDatabaseFullMessage(exception.Message))
-            return true;
-
-        return IsDatabaseFullFailure(exception.InnerException);
-    }
-
-    private static bool IsDatabaseFullMessage(string? message)
-    {
-        if (string.IsNullOrWhiteSpace(message)) return false;
-        var normalized = message.ToLowerInvariant();
-        return DatabaseFullMessages.Any(keyword => normalized.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+        return exception is UnauthorizedAccessException
+            || IsSessionExpired(exception.InnerException);
     }
 
     public static bool IsConnectionFailure(Exception? exception)
@@ -88,50 +56,50 @@ public static class ConnectionFailureHandler
         if (exception is TargetInvocationException tie && tie.InnerException is not null)
             return IsConnectionFailure(tie.InnerException);
 
-        if (exception is SocketException) return true;
-        if (exception is TimeoutException) return true;
-        if (exception is NpgsqlException) return true;
-        if (exception is System.Net.Http.HttpRequestException) return true;
-        if (exception is TaskCanceledException) return true;
-        if (exception is DbException dbException)
-            return IsConnectionFailureMessage(dbException.Message)
-                || IsConnectionFailure(dbException.InnerException);
+        // HttpRequestException with a StatusCode means we DID reach the server —
+        // it just returned an error (422, 500, etc). That's not a connection failure.
+        if (exception is HttpRequestException httpEx)
+            return httpEx.StatusCode is null;
 
-        if (exception is InvalidOperationException && IsConnectionFailureMessage(exception.Message))
-            return true;
+        if (exception is TaskCanceledException) return true; // covers HttpClient timeouts
+        if (exception is System.Net.Sockets.SocketException) return true;
 
-        if (exception is InvalidOperationException && exception.InnerException is not null)
-            return IsConnectionFailure(exception.InnerException);
+        if (IsNetworkFailureMessage(exception.Message)) return true;
 
         return IsConnectionFailure(exception.InnerException);
     }
 
-    private static bool IsConnectionFailureMessage(string? message)
+    private static bool IsNetworkFailureMessage(string? message)
     {
         if (string.IsNullOrWhiteSpace(message)) return false;
-
         var normalized = message.ToLowerInvariant();
-        return ConnectionFailureMessages.Any(keyword => normalized.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+        return NetworkFailureMessages.Any(keyword => normalized.Contains(keyword, StringComparison.OrdinalIgnoreCase));
     }
 
-    public static bool RedirectToLoginIfConnectionFailure(Exception exception)
+    /// <summary>
+    /// Central dispatch: call this from every catch block that might see an
+    /// API failure. Returns true if it handled the exception (redirected to
+    /// login or showed a message) — caller should treat it as handled.
+    /// </summary>
+    public static bool HandleIfApiFailure(Exception exception)
     {
-        // Database-full is checked first: it's a more specific diagnosis than
-        // a generic lost connection, and some of its keywords (e.g. "too many
-        // connections") would otherwise match the generic connection list.
-        if (IsDatabaseFullFailure(exception))
+        if (IsSessionExpired(exception))
         {
             LogError(exception);
-            ShowGlobalMessage("Database is full. Please contact the system administrator.");
+            ShowGlobalMessage("Your session has expired. Please log in again.");
+            SessionExpired?.Invoke();
             return true;
         }
 
-        if (!IsConnectionFailure(exception)) return false;
+        if (IsConnectionFailure(exception))
+        {
+            LogError(exception);
+            ShowGlobalMessage("Network connection lost. Please check your internet connection and try again.");
+            ConnectionLost?.Invoke();
+            return true;
+        }
 
-        LogError(exception);
-
-        ShowGlobalMessage("Network connection lost. Please log in again.");
-        return true;
+        return false;
     }
 
     private static void ShowGlobalMessage(string message)
@@ -142,13 +110,9 @@ public static class ConnectionFailureHandler
             app.Dispatcher.BeginInvoke(() =>
             {
                 if (app.MainWindow is ShellWindow shell)
-                {
                     shell.RedirectToLogin(message);
-                }
                 else
-                {
                     ConnectionLost?.Invoke();
-                }
             });
         }
         else

@@ -372,5 +372,6 @@ Output/
 # Secrets
 LLOIS/secrets/drive-service-account.json
 LLOIS/secrets/oauth-client.json
+LLOIS/secrets/google-token.json
 
 google-drive-token/

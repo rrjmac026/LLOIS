@@ -6,34 +6,43 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class OrdinancesView : UserControl
 {
     private readonly IOrdinanceService _service;
-    private readonly IAuthService      _auth;
-    private readonly User              _currentUser;
-    private string     _searchQuery      = string.Empty;
-    private Ordinance? _selectedOrdinance;
-    private bool       _loaded           = false;
+    private readonly ApiUser           _currentUser;
+    private string        _searchQuery      = string.Empty;
+    private ApiOrdinance? _selectedOrdinance;
+    private bool          _loaded           = false;
+    private bool          _suppressSelection = false;
 
     private readonly System.Windows.Threading.DispatcherTimer _searchTimer = new()
     {
         Interval = TimeSpan.FromMilliseconds(300)
     };
 
-    public OrdinancesView(IOrdinanceService service, IAuthService auth, User user)
+    private readonly System.Windows.Threading.DispatcherTimer _refreshTimer = new()
+    {
+        Interval = TimeSpan.FromSeconds(15)
+    };
+
+    public OrdinancesView(IOrdinanceService service, ApiUser user)
     {
         InitializeComponent();
         _service     = service;
-        _auth        = auth;
         _currentUser = user;
 
-        bool canWrite = user.Role is UserRole.Admin or UserRole.SuperAdmin or UserRole.Encoder;
+        bool canWrite = user.RoleName is "Admin" or "SuperAdmin" or "Encoder";
         AddBtn.Visibility = canWrite ? Visibility.Visible : Visibility.Collapsed;
 
         _searchTimer.Tick += SearchTimer_Tick;
+        _refreshTimer.Tick += async (_, _) =>
+        {
+            if (IsVisible && SessionContext.CurrentUser is not null)
+                await LoadOrdinancesAsync(preserveSelection: true);
+        };
+        _refreshTimer.Start();
     }
 
     public void ReloadIfNeeded()
@@ -54,45 +63,72 @@ public partial class OrdinancesView : UserControl
 
     // ── Data loading ───────────────────────────────────────────────────────
 
-    private async Task LoadOrdinancesAsync()
+    private async Task LoadOrdinancesAsync(bool preserveSelection = false)
     {
+        var selectedId = preserveSelection ? _selectedOrdinance?.Id : null;
         try
         {
-            var query   = _searchQuery;
-            var results = await Task.Run(() => _service.Search(query).ToList());
+            var query = _searchQuery;
 
-            // Status filter
+            string? statusFilter = null;
             if (StatusFilter.SelectedItem is ComboBoxItem { Content: string status }
                 && status != "All statuses")
             {
-                var parsed = status.Replace(" ", "") switch
+                statusFilter = status.Replace(" ", "").ToLowerInvariant() switch
                 {
-                    "InEffect"    => OrdinanceStatus.InEffect,
-                    "Amended"     => OrdinanceStatus.Amended,
-                    "Superseded"  => OrdinanceStatus.Superseded,
-                    "Repealed"    => OrdinanceStatus.Repealed,
-                    "UnderReview" => OrdinanceStatus.UnderReview,
-                    _             => (OrdinanceStatus?)null
+                    "ineffect"    => "in_effect",
+                    "amended"     => "amended",
+                    "superseded"  => "superseded",
+                    "repealed"    => "repealed",
+                    "underreview" => "under_review",
+                    _             => null
                 };
-                if (parsed.HasValue)
-                    results = results.Where(o => o.Status == parsed.Value).ToList();
             }
 
-            // Type filter
+            var results = (await _service.SearchAsync(query, statusFilter)).ToList();
+
+            // Type filter (client-side — no server param for this one)
             if (TypeFilter.SelectedItem is ComboBoxItem { Content: string typeName }
-                && typeName != "All types"
-                && Enum.TryParse<TypeOfLaw>(typeName, out var parsedType))
+                && typeName != "All types")
             {
-                results = results.Where(o => o.Type == parsedType).ToList();
+                results = results.Where(o =>
+                    string.Equals(o.Type, typeName, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
-            OrdinanceList.ItemsSource = results;
-            ResultCount.Text = $"{results.Count} ordinances found";
-            ClearDetail();
+            _suppressSelection = true;
+            try
+            {
+                OrdinanceList.ItemsSource = results;
+                ResultCount.Text = $"{results.Count} ordinances found";
+
+                var selected = selectedId.HasValue
+                    ? results.FirstOrDefault(o => o.Id == selectedId.Value)
+                    : null;
+                if (selected is null)
+                {
+                    ClearDetail();
+                    return;
+                }
+
+                OrdinanceList.SelectedItem = selected;
+                var detail = await _service.GetDetailsAsync(selected.Id);
+                if (detail is null)
+                {
+                    ClearDetail();
+                    return;
+                }
+
+                _selectedOrdinance = detail;
+                ShowDetail(detail);
+            }
+            finally
+            {
+                _suppressSelection = false;
+            }
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading ordinances:\n{ex.Message}", "Error",
@@ -126,21 +162,20 @@ public partial class OrdinancesView : UserControl
 
     private async void OrdinanceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (OrdinanceList.SelectedItem is not Ordinance o) return;
+        if (_suppressSelection) return;
+        if (OrdinanceList.SelectedItem is not ApiOrdinance o) return;
 
         try
         {
-            var detail = await Task.Run(() => _service.GetDetailsByPrimaryId(o.Id));
+            var detail = await _service.GetDetailsAsync(o.Id);
             if (detail is null) return;
 
             _selectedOrdinance = detail;
             ShowDetail(detail);
-            _ = Task.Run(() => _auth.LogAction(_currentUser, "VIEW",
-                $"Viewed ordinance {o.OrdinanceNumber}"));
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading ordinance details:\n{ex.Message}", "Error",
@@ -155,8 +190,6 @@ public partial class OrdinancesView : UserControl
         var dlg = new AddEditOrdinanceWindow(_service) { Owner = Window.GetWindow(this) };
         if (dlg.ShowDialog() == true)
         {
-            _ = Task.Run(() => _auth.LogAction(_currentUser, "ADD",
-                $"Added ordinance {dlg.SavedOrdinance?.OrdinanceNumber}"));
             _loaded = false;
             ReloadIfNeeded();
 
@@ -173,29 +206,12 @@ public partial class OrdinancesView : UserControl
         if (dlg.ShowDialog() == true)
         {
             var id = _selectedOrdinance.Id;
-            var num = _selectedOrdinance.OrdinanceNumber;
-            _ = Task.Run(() => _auth.LogAction(_currentUser, "EDIT", $"Edited {num}"));
             await LoadOrdinancesAsync();
-            var updated = await Task.Run(() => _service.GetDetailsByPrimaryId(id));
+            var updated = await _service.GetDetailsAsync(id);
             if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
 
             MessageBox.Show("Ordinance updated successfully.", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-    }
-
-    private async void AmendBtn_Click(object sender, RoutedEventArgs e)
-    {
-        if (_selectedOrdinance is null) return;
-        var dlg = new AddAmendmentWindow(_service, _selectedOrdinance)
-                  { Owner = Window.GetWindow(this) };
-        if (dlg.ShowDialog() == true)
-        {
-            var num = _selectedOrdinance.OrdinanceNumber;
-            _ = Task.Run(() => _auth.LogAction(_currentUser, "AMEND", $"Amended {num}"));
-            await LoadOrdinancesAsync();
-            var updated = await Task.Run(() => _service.GetDetails(num));
-            if (updated is not null) { _selectedOrdinance = updated; ShowDetail(updated); }
         }
     }
 
@@ -207,12 +223,6 @@ public partial class OrdinancesView : UserControl
         {
             Process.Start(new ProcessStartInfo(_selectedOrdinance.DocumentPath)
                 { UseShellExecute = true });
-
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "OPEN_PDF", $"Opened PDF for {_selectedOrdinance.OrdinanceNumber}"); }
-                catch { /* non-critical */ }
-            });
         }
         catch (Exception ex)
         {
@@ -230,10 +240,8 @@ public partial class OrdinancesView : UserControl
         if (result != MessageBoxResult.Yes) return;
         try
         {
-            var ordinance = _selectedOrdinance;
-            await Task.Run(() => _service.Delete(ordinance.OrdinanceNumber));
-            _ = Task.Run(() => _auth.LogAction(_currentUser, "DELETE",
-                $"Deleted ordinance {ordinance.OrdinanceNumber}"));
+            var id = _selectedOrdinance.Id;
+            await _service.DeleteAsync(id);
             await LoadOrdinancesAsync();
 
             MessageBox.Show("Ordinance deleted successfully.", "Success",
@@ -241,7 +249,7 @@ public partial class OrdinancesView : UserControl
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Delete failed:\n{ex.Message}", "Error",
@@ -251,57 +259,49 @@ public partial class OrdinancesView : UserControl
 
     // ── ShowDetail ─────────────────────────────────────────────────────────
 
-    private void ShowDetail(Ordinance o)
+    private void ShowDetail(ApiOrdinance o)
     {
         DetailPanel.Visibility = Visibility.Visible;
         ActionBar.Visibility   = Visibility.Visible;
 
-        bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
-        bool isAdmin  = _currentUser.Role == UserRole.Admin;
+        bool canWrite = _currentUser.RoleName is "Admin" or "Encoder";
 
-        // Topbar action buttons (hidden; we use inline row below hero card now)
         EditBtn.Visibility    = Visibility.Collapsed;
-        AmendBtn.Visibility   = Visibility.Collapsed;
         DeleteBtn.Visibility  = canWrite  ? Visibility.Visible : Visibility.Collapsed;
         OpenPdfBtn.Visibility = Visibility.Collapsed;
         ActionBar.Visibility  = canWrite  ? Visibility.Visible : Visibility.Collapsed;
 
-        // Inline action row under hero card
         InlineActionRow.Visibility   = canWrite ? Visibility.Visible : Visibility.Collapsed;
         InlineEditBtn.Visibility     = canWrite ? Visibility.Visible : Visibility.Collapsed;
         InlineOpenPdfBtn.Visibility  = o.DocumentPath is not null ? Visibility.Visible : Visibility.Collapsed;
 
-        // Hero
         DetailId.Text      = $"{o.OrdinanceNumber}  ·  {o.SeriesNumber}";
         DetailSubject.Text = o.Subject;
         DetailSeries.Text  = $"{o.Type}  ·  Sponsor: {o.Sponsor}";
         VersionCountLabel.Text = $"  {o.Versions.Count} version{(o.Versions.Count == 1 ? "" : "s")}";
 
-        // Status badge
-        (var bgKey, var fgKey) = o.Status switch
+        (var bgKey, var fgKey) = o.Status.ToLowerInvariant() switch
         {
-            OrdinanceStatus.InEffect    => ("StatusInEffectBgBrush", "StatusInEffectFgBrush"),
-            OrdinanceStatus.Amended     => ("StatusAmendedBgBrush",  "StatusAmendedFgBrush"),
-            OrdinanceStatus.Repealed    => ("StatusRepealedBgBrush", "StatusRepealedFgBrush"),
-            OrdinanceStatus.UnderReview => ("StatusReviewBgBrush",   "StatusReviewFgBrush"),
-            OrdinanceStatus.Superseded  => ("StatusSupersededBgBrush","StatusSupersededFgBrush"),
-            _                           => ("StatusReviewBgBrush",   "StatusReviewFgBrush"),
+            "in_effect"    => ("StatusInEffectBgBrush", "StatusInEffectFgBrush"),
+            "amended"      => ("StatusAmendedBgBrush",  "StatusAmendedFgBrush"),
+            "repealed"     => ("StatusRepealedBgBrush", "StatusRepealedFgBrush"),
+            "under_review" => ("StatusReviewBgBrush",   "StatusReviewFgBrush"),
+            "superseded"   => ("StatusSupersededBgBrush","StatusSupersededFgBrush"),
+            _              => ("StatusReviewBgBrush",   "StatusReviewFgBrush"),
         };
         StatusBadgeControl.SetResourceReference(Border.BackgroundProperty, bgKey);
         DetailStatus.SetResourceReference(TextBlock.ForegroundProperty, fgKey);
-        DetailStatus.Text = o.Status switch
+        DetailStatus.Text = o.Status.ToLowerInvariant() switch
         {
-            OrdinanceStatus.InEffect    => "In effect",
-            OrdinanceStatus.UnderReview => "Under review",
-            _                           => o.Status.ToString()
+            "in_effect"    => "In effect",
+            "under_review" => "Under review",
+            _              => o.Status
         };
 
-        // Chips
         PdfBadge.Visibility = !string.IsNullOrEmpty(o.DocumentPath) ? Visibility.Visible : Visibility.Collapsed;
 
-        // Metadata grid
         MetadataGrid.Children.Clear();
-        AddMetaCell(o.Committee, "Committee");
+        AddMetaCell(o.Committee ?? "—", "Committee");
         AddMetaCell(o.DatePassed?.ToString("MMMM dd, yyyy") ?? "—", "Date passed");
         AddMetaCell(o.DateApproved?.ToString("MMMM dd, yyyy") ?? "—", "Date approved");
         AddMetaCell(o.DatePublished?.ToString("MMMM dd, yyyy") ?? "—", "Date published");
@@ -309,40 +309,26 @@ public partial class OrdinancesView : UserControl
             AddMetaCell(o.Location, "Location");
         if (!string.IsNullOrEmpty(o.ReferenceNumber))
             AddMetaCell(o.ReferenceNumber, "Reference number");
-        if (o.FinalAction.HasValue)
-            AddMetaCell(o.FinalAction.Value.ToString(), "Final action");
-        if (o.State.HasValue)
-            AddMetaCell(o.State.Value.ToString(), "State");
+        if (!string.IsNullOrEmpty(o.FinalAction))
+            AddMetaCell(o.FinalAction, "Final action");
+        if (!string.IsNullOrEmpty(o.State))
+            AddMetaCell(o.State, "State");
         if (!string.IsNullOrEmpty(o.AddedBy))
             AddMetaCell(o.AddedBy, "Added by");
 
-        // Latest version
         LatestVersionPanel.Children.Clear();
-        if (o.LatestVersion is OrdinanceVersion latest)
+        if (o.LatestVersion is ApiOrdinanceVersion latest)
         {
             LatestVersionCard.Visibility = Visibility.Visible;
             VersionNumLabel.Text         = $"Version {latest.VersionNumber} (latest)";
-            VersionDateLabel.Text        = $"Enacted {latest.DateEnacted:MMMM dd, yyyy}";
-            LatestVersionPanel.Children.Add(MakeVersionRow("Title",      latest.Title,      bold: true));
-            LatestVersionPanel.Children.Add(MakeVersionRow("Enacted by", latest.EnactedBy));
-            LatestVersionPanel.Children.Add(MakeVersionRow("Content",    latest.Content));
-
-            if (!string.IsNullOrEmpty(latest.AmendmentNotes))
-            {
-                var nb = new Border { Margin = new Thickness(0,8,0,0), CornerRadius = new CornerRadius(6), Padding = new Thickness(10,8,10,8) };
-                nb.SetResourceReference(Border.BackgroundProperty, "VersionNotesBgBrush");
-                var nt = new TextBlock { Text = latest.AmendmentNotes, TextWrapping = TextWrapping.Wrap, FontSize = 12, FontStyle = FontStyles.Italic };
-                nt.SetResourceReference(TextBlock.ForegroundProperty, "VersionNotesFgBrush");
-                nb.Child = nt;
-                LatestVersionPanel.Children.Add(nb);
-            }
+            LatestVersionPanel.Children.Add(MakeVersionRow("Title",   latest.Title, bold: true));
+            LatestVersionPanel.Children.Add(MakeVersionRow("Content", latest.Content));
         }
         else
         {
             LatestVersionCard.Visibility = Visibility.Collapsed;
         }
 
-        // History
         var history = o.Versions.OrderBy(v => v.VersionNumber).SkipLast(1).ToList();
         HistoryHeader.Visibility       = history.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         VersionHistoryList.ItemsSource = history;
@@ -395,5 +381,4 @@ public partial class OrdinancesView : UserControl
         _searchTimer.Stop();
         _searchTimer.Start();
     }
-    
 }

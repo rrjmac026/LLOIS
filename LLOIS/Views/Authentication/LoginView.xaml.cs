@@ -1,42 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace LLOIS.Views;
+﻿namespace LLOIS.Views;
 
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using LLOIS.Data;
-using LLOIS.Models;
-using LLOIS.Repositories;
 using LLOIS.Services;
 
 public partial class LoginView : UserControl
 {
+    private readonly ApiClient _api;
     private readonly IAuthService _auth;
-    private readonly SimpleDbContextFactory _factory;
 
-    public event Action<User, SimpleDbContextFactory>? LoginSucceeded;
+    public event Action<ApiUser, ApiClient>? LoginSucceeded;
 
-    public LoginView()
+    public LoginView(ApiClient api)
     {
         InitializeComponent();
-        _factory = new SimpleDbContextFactory();
-        Task.Run(() =>
-        {
-            try
-            {
-                using var db = _factory.CreateDbContext();
-                DbSeeder.Seed(db);
-            }
-            catch (Exception ex)
-            {
-                ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex);
-            }
-        });
-        _auth = new AuthService(new UserRepository(_factory), _factory);
+        _api = api;
+        _auth = new AuthService(api);
     }
 
     private async void TryLogin()
@@ -56,24 +37,27 @@ public partial class LoginView : UserControl
 
         try
         {
-            var user = await Task.Run(() => _auth.Login(username, password));
+            var user = await _auth.LoginAsync(username, password, rememberMe: true);
             LoginButton.IsEnabled = true;
 
-            if (user is null)
-            {
-                ErrorText.Text = "Invalid username or password.";
-                ErrorBanner.Visibility = Visibility.Visible;
-                return;
-            }
-            
-            SessionContext.CurrentUser = user;
-
-            LoginSucceeded?.Invoke(user, _factory);
+            LoginSucceeded?.Invoke(user, _api);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            LoginButton.IsEnabled = true;
+            ErrorText.Text = "Invalid username or password.";
+            ErrorBanner.Visibility = Visibility.Visible;
+        }
+        catch (InvalidOperationException ex)
+        {
+            LoginButton.IsEnabled = true;
+            ErrorText.Text = ex.Message;
+            ErrorBanner.Visibility = Visibility.Visible;
         }
         catch (Exception ex)
         {
             LoginButton.IsEnabled = true;
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Unable to log in:\n{ex.Message}", "Login Error",

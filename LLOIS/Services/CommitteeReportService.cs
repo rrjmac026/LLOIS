@@ -1,36 +1,68 @@
 namespace LLOIS.Services;
 
-using LLOIS.Models;
-using LLOIS.Repositories;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
-public class CommitteeReportService(ICommitteeReportRepository repo) : ICommitteeReportService
+public class CommitteeReportService(ApiClient api) : ICommitteeReportService
 {
-    public IEnumerable<CommitteeReport> Search(string query)
+    public async Task<IEnumerable<ApiCommitteeReport>> SearchAsync(string? query = null)
     {
-        if (string.IsNullOrWhiteSpace(query))
-            return repo.GetAll();
-
-        var keywords = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        return repo.GetAll().Where(r =>
-            keywords.All(k =>
-                (r.ReportNumber?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (r.Subject?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (r.SubmittedBy?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (r.SponsoredBy?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false)
-            ));
+        var suffix = string.IsNullOrWhiteSpace(query) ? "" : $"?search={Uri.EscapeDataString(query)}";
+        var result = await api.GetAsync<PagedResult<ApiCommitteeReport>>($"api/committee-reports{suffix}");
+        return result?.Data ?? Enumerable.Empty<ApiCommitteeReport>();
     }
 
-    public CommitteeReport? GetDetails(int id) => repo.GetById(id);
+    public Task<ApiCommitteeReportDetails?> GetDetailsAsync(int id) =>
+        api.GetAsync<ApiCommitteeReportDetails>($"api/committee-reports/{id}");
 
-    public void Add(CommitteeReport report) => repo.Add(report);
+    public Task<ApiCommitteeReport> AddAsync(CommitteeReportInput input) =>
+        SendAsync<ApiCommitteeReport>("api/committee-reports", input)!;
 
-    public void Update(CommitteeReport report) => repo.Update(report);
+    public Task UpdateAsync(int id, CommitteeReportInput input) =>
+        SendAsync<object>($"api/committee-reports/{id}?_method=PUT", input);
 
-    public void Delete(int id)
+    public Task DeleteAsync(int id) =>
+        api.DeleteAsync($"api/committee-reports/{id}");
+
+    public Task DeleteAttachmentAsync(int reportId, int attachmentId) =>
+        api.DeleteAsync($"api/committee-reports/{reportId}/attachments/{attachmentId}");
+
+    private async Task<T?> SendAsync<T>(string endpoint, CommitteeReportInput input)
     {
-        var report = repo.GetById(id)
-            ?? throw new InvalidOperationException("Committee report not found.");
-        repo.Delete(report);
+        using var content = new MultipartFormDataContent();
+
+        content.Add(new StringContent(input.ReportNumber), "report_number");
+        if (input.Date.HasValue)
+            content.Add(new StringContent(input.Date.Value.ToString("yyyy-MM-dd")), "date");
+        if (input.SubmittedBy is not null)
+            content.Add(new StringContent(input.SubmittedBy), "submitted_by");
+        if (input.SponsoredBy is not null)
+            content.Add(new StringContent(input.SponsoredBy), "sponsored_by");
+        if (input.Subject is not null)
+            content.Add(new StringContent(input.Subject), "subject");
+
+        foreach (var path in input.NewAttachmentFilePaths)
+        {
+            var bytes = await File.ReadAllBytesAsync(path);
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GetContentType(path));
+            content.Add(fileContent, "attachments[]", Path.GetFileName(path));
+        }
+
+        return await api.PostMultipartAsync<T>(endpoint, content);
     }
+
+    private static string GetContentType(string filePath) => Path.GetExtension(filePath).ToLowerInvariant() switch
+    {
+        ".pdf"  => "application/pdf",
+        ".doc"  => "application/msword",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".xls"  => "application/vnd.ms-excel",
+        ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        ".png"  => "image/png",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".txt"  => "text/plain",
+        _       => "application/octet-stream"
+    };
 }

@@ -2,23 +2,19 @@ namespace LLOIS.Views;
 
 using System.Windows;
 using System.Windows.Controls;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class ReportsView : UserControl
 {
-    private readonly IOrdinanceService _service;
-    private readonly IAuthService _auth;
-    private readonly User _currentUser;
-    private List<Ordinance> _currentData = [];
+    private readonly IReportService _service;
+    private List<ApiOrdinance> _currentData = [];
     private bool _initialized;
+    private int  _loadId;   // guards against out-of-order responses when tabs/filters change quickly
 
-    public ReportsView(IOrdinanceService service, IAuthService auth, User currentUser)
+    public ReportsView(IReportService service)
     {
         InitializeComponent();
         _service = service;
-        _auth = auth;
-        _currentUser = currentUser;
     }
 
     /// <summary>
@@ -26,22 +22,29 @@ public partial class ReportsView : UserControl
     /// one-time year-combo setup the first time; reloads the active report
     /// every time so it stays fresh if ordinances changed elsewhere.
     /// </summary>
-    public void ReloadIfNeeded()
+    public void ReloadIfNeeded() => _ = ReloadIfNeededAsync();
+
+    private async Task ReloadIfNeededAsync()
     {
         if (!_initialized)
         {
             try
             {
-                _initialized = true;
+                var years = await _service.GetOrdinanceYearsAsync();
+
+                // _initialized is still false here, so the SelectionChanged events fired
+                // by filling the combo are ignored (no duplicate loads).
                 YearCombo.Items.Clear();
                 YearCombo.Items.Add(new ComboBoxItem { Content = "All Years" });
-                foreach (var year in _service.GetAvailableYears())
+                foreach (var year in years)
                     YearCombo.Items.Add(new ComboBoxItem { Content = year.ToString() });
                 YearCombo.SelectedIndex = 0;
+
+                _initialized = true;
             }
             catch (Exception ex)
             {
-                if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+                if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                     return;
 
                 MessageBox.Show($"Error loading reports data:\n{ex.Message}", "Error",
@@ -50,45 +53,53 @@ public partial class ReportsView : UserControl
             }
         }
 
-        LoadReport();
+        await LoadReportAsync();
     }
 
-    private void ReportTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ReportTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        // ComboBox SelectionChanged bubbles up to the TabControl — ignore those.
+        if (e.OriginalSource != ReportTabs) return;
         if (_service is null || !_initialized) return;
+
         var tab = (ReportTabs.SelectedItem as TabItem)?.Header?.ToString();
         YearFilterPanel.Visibility   = tab == "By Year"   ? Visibility.Visible : Visibility.Collapsed;
         StatusFilterPanel.Visibility = tab == "By Status" ? Visibility.Visible : Visibility.Collapsed;
-        LoadReport();
+        await LoadReportAsync();
     }
 
-    private void Filter_Changed(object sender, SelectionChangedEventArgs e)
+    private async void Filter_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (_service is null) return;
-        LoadReport();
+        if (_service is null || !_initialized) return;
+        await LoadReportAsync();
     }
 
-    private void LoadReport()
+    private async Task LoadReportAsync()
     {
         if (_service is null || ReportTabs.SelectedItem is null) return;
 
+        var loadId = ++_loadId;
         try
         {
             var tab = (ReportTabs.SelectedItem as TabItem)?.Header?.ToString() ?? "All Ordinances";
-            _currentData = tab switch
+            var data = tab switch
             {
-                "By Year"   => LoadByYear(),
-                "By Status" => LoadByStatus(),
-                "Repealed"  => _service.GetByStatus(OrdinanceStatus.Repealed).ToList(),
-                "Amended"   => _service.Search("").Where(o => o.HasAmendments).ToList(),
-                _           => _service.Search("").ToList()
+                "By Year"   => await LoadByYearAsync(),
+                "By Status" => await LoadByStatusAsync(),
+                "Repealed"  => await _service.GetOrdinancesAsync(status: "repealed"),
+                "Amended"   => await _service.GetOrdinancesAsync(amendedOnly: true),
+                _           => await _service.GetOrdinancesAsync()
             };
+
+            if (loadId != _loadId) return;   // a newer request superseded this one
+
+            _currentData = data;
             ReportGrid.ItemsSource = _currentData;
             RecordCount.Text = $"{_currentData.Count} record(s)";
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading reports:\n{ex.Message}", "Error",
@@ -96,39 +107,45 @@ public partial class ReportsView : UserControl
         }
     }
 
-    private List<Ordinance> LoadByYear()
+    private Task<List<ApiOrdinance>> LoadByYearAsync()
     {
-        var all = _service.Search("").ToList();
-        if (YearCombo.SelectedItem is ComboBoxItem { Content: string s } && int.TryParse(s, out var year))
-            return all.Where(o => o.DatePassed?.Year == year).ToList();
-        return all;
+        int? year = YearCombo.SelectedItem is ComboBoxItem { Content: string s } && int.TryParse(s, out var y)
+            ? y : null;
+        return _service.GetOrdinancesAsync(year: year);
     }
 
-    private List<Ordinance> LoadByStatus()
+    private Task<List<ApiOrdinance>> LoadByStatusAsync()
     {
         var statusText = (StatusCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "In Effect";
         var status = statusText switch
         {
-            "Amended"      => OrdinanceStatus.Amended,
-            "Superseded"   => OrdinanceStatus.Superseded,
-            "Under Review" => OrdinanceStatus.UnderReview,
-            _              => OrdinanceStatus.InEffect
+            "Amended"      => "amended",
+            "Superseded"   => "superseded",
+            "Under Review" => "under_review",
+            _              => "in_effect"
         };
-        return _service.GetByStatus(status).ToList();
+        return _service.GetOrdinancesAsync(status: status);
     }
 
     // ── Shared helpers ───────────────────────────────────────────────────────
 
-    private static readonly (string Header, Func<Ordinance, string> Value)[] Columns =
+    private static readonly (string Header, Func<ApiOrdinance, string> Value)[] Columns =
     [
         ("Ord. Number", o => o.OrdinanceNumber),
-        ("Series",      o => o.SeriesNumber),
+        ("Series",      o => o.SeriesNumber ?? ""),
         ("Title",       o => o.Title),
-        ("Type",        o => o.Type.ToString()),
-        ("Status",      o => o.Status.ToString()),
-        ("Sponsor",     o => o.Sponsor),
+        ("Type",        o => Pretty(o.Type)),
+        ("Status",      o => Pretty(o.Status)),
+        ("Sponsor",     o => o.Sponsor ?? ""),
         ("Date Passed", o => o.DatePassed?.ToString("MM/dd/yyyy") ?? "—"),
     ];
+
+    // "in_effect" -> "In Effect" (Laravel sends raw enum values)
+    private static string Pretty(string? value) =>
+        string.IsNullOrEmpty(value)
+            ? ""
+            : string.Join(' ', value.Split('_', StringSplitOptions.RemoveEmptyEntries)
+                .Select(w => char.ToUpper(w[0]) + w[1..]));
 
     private string CurrentTabTitle =>
         (ReportTabs.SelectedItem as TabItem)?.Header?.ToString() ?? "Report";
@@ -149,4 +166,12 @@ public partial class ReportsView : UserControl
 
     private static string HtmlEncode(string? s) =>
         (s ?? "").Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+
+    // Exports/prints are local, so tell the server to record them (fire-and-forget, never blocks the user).
+    private void LogReportAction(string action, string details) =>
+        _ = Task.Run(async () =>
+        {
+            try { await _service.LogReportActionAsync(action, details); }
+            catch { /* non-critical */ }
+        });
 }

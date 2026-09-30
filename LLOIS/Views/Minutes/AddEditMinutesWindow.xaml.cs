@@ -1,18 +1,25 @@
 namespace LLOIS.Views;
 
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class AddEditMinutesWindow : Window
 {
+    // Laravel validates `document` as pdf/doc/docx, max 20480 KB.
+    private const long MaxFileBytes = 20L * 1024 * 1024;
+
     private readonly IMinutesService _service;
-    private readonly Minutes? _existing;
+    private readonly ApiMinutes? _existing;
     private readonly bool _isEdit;
 
-    public Minutes? SavedMinutes { get; private set; }
+    // Newly picked file, uploaded together with the form on Save.
+    private string? _localDocumentPath;
+
+    // Only set in Add mode (the created record as returned by the API).
+    public ApiMinutes? SavedMinutes { get; private set; }
 
     // Add mode
     public AddEditMinutesWindow(IMinutesService service)
@@ -24,7 +31,7 @@ public partial class AddEditMinutesWindow : Window
     }
 
     // Edit mode
-    public AddEditMinutesWindow(IMinutesService service, Minutes existing)
+    public AddEditMinutesWindow(IMinutesService service, ApiMinutes existing)
     {
         InitializeComponent();
         _service = service;
@@ -47,75 +54,81 @@ public partial class AddEditMinutesWindow : Window
         }
     }
 
+    // ── File selection (upload happens on Save) ─────────────────
+
     private void BrowseFile_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog
         {
             Title = "Select Minutes Document",
-            Filter = "All Files (*.*)|*.*"
+            Filter = "Documents (*.pdf;*.doc;*.docx)|*.pdf;*.doc;*.docx"
         };
         if (dlg.ShowDialog() != true) return;
 
-        try
+        var info = new FileInfo(dlg.FileName);
+        if (info.Length > MaxFileBytes)
         {
-            FilePathBox.Text = "Uploading...";
-            var url = StorageService.UploadMinutesFile(dlg.FileName);
-            FilePathBox.Text = url;
+            ShowError("File is too large. Maximum size is 20 MB.");
+            return;
         }
-        catch (Exception ex)
-        {
-            FilePathBox.Text = "";
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
-                MessageBox.Show($"Upload failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+
+        HideError();
+        _localDocumentPath = dlg.FileName;
+        FilePathBox.Text   = info.Name;
     }
 
     private void RemoveFileBtn_Click(object sender, RoutedEventArgs e)
     {
-        FilePathBox.Text = "";
+        if (_localDocumentPath is not null)
+        {
+            // Undo the pick and fall back to whatever is already on the server.
+            _localDocumentPath = null;
+            FilePathBox.Text   = _existing?.DocumentPath ?? "";
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(_existing?.DocumentPath))
+            MessageBox.Show(
+                "Removing an existing document isn't supported by the API yet.\nPick a new file to replace it.",
+                "Not supported", MessageBoxButton.OK, MessageBoxImage.Information);
     }
+
+    // ── Save ─────────────────────────────────────────────────────
 
     private void CancelBtn_Click(object sender, RoutedEventArgs e) => DialogResult = false;
 
-    private void SaveBtn_Click(object sender, RoutedEventArgs e)
+    private async void SaveBtn_Click(object sender, RoutedEventArgs e)
     {
         if (!Validate()) return;
+
+        SaveBtn.IsEnabled = false;
         try
         {
-            var sessionType = (SessionTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
-            var date = DatePickerControl.SelectedDate.HasValue
-                ? DateOnly.FromDateTime(DatePickerControl.SelectedDate.Value) : (DateOnly?)null;
-            var docPath = string.IsNullOrWhiteSpace(FilePathBox.Text) ? null : FilePathBox.Text.Trim();
+            var input = new MinutesInput
+            {
+                SessionType = (SessionTypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "",
+                Date = DatePickerControl.SelectedDate.HasValue
+                    ? DateOnly.FromDateTime(DatePickerControl.SelectedDate.Value) : null,
+                LocalDocumentPath = _localDocumentPath
+            };
 
             if (_isEdit)
-            {
-                var m = _existing!;
-                m.SessionType = sessionType;
-                m.Date = date;
-                m.DocumentPath = docPath;
-                _service.Update(m);
-                SavedMinutes = m;
-            }
+                await _service.UpdateAsync(_existing!.Id, input);
             else
-            {
-                var m = new Minutes
-                {
-                    SessionType = sessionType,
-                    Date = date,
-                    DocumentPath = docPath
-                };
-                _service.Add(m);
-                SavedMinutes = m;
-            }
+                SavedMinutes = await _service.AddAsync(input);
 
             DialogResult = true;
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             ShowError($"Save failed: {ex.Message}");
+        }
+        finally
+        {
+            SaveBtn.IsEnabled = true;
         }
     }
 

@@ -176,12 +176,6 @@
                                     Margin="0,0,6,0"
                                     Click="EditBtn_Click"
                                     Visibility="Collapsed"/>
-                            <Button x:Name="AmendBtn"
-                                    Content="📝 Add amendment"
-                                    Style="{StaticResource ActionBtn}"
-                                    Margin="0,0,6,0"
-                                    Click="AmendBtn_Click"
-                                    Visibility="Collapsed"/>
                             <Button x:Name="OpenPdfBtn"
                                     Content="📄 Open PDF"
                                     Style="{StaticResource ActionBtn}"

@@ -1,35 +1,39 @@
 namespace LLOIS.Views;
 
+using System.IO;
 using System.Windows;
 using Microsoft.Win32;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class AddEditResolutionWindow : Window
 {
+    // Laravel validates `document` as pdf/doc/docx, max 20480 KB.
+    private const long MaxFileBytes = 20L * 1024 * 1024;
+
     private readonly IResolutionService _service;
-    private readonly User _currentUser;
-    private readonly Resolution? _existing;
+    private readonly ApiResolution? _existing;
     private readonly bool _isEdit;
 
-    public Resolution? SavedResolution { get; private set; }
+    // Newly picked file, uploaded together with the form on Save.
+    private string? _localDocumentPath;
+
+    // Only set in Add mode (the created resolution as returned by the API).
+    public ApiResolution? SavedResolution { get; private set; }
 
     // Add mode
-    public AddEditResolutionWindow(IResolutionService service, User currentUser)
+    public AddEditResolutionWindow(IResolutionService service)
     {
         InitializeComponent();
         _service = service;
-        _currentUser = currentUser;
         _isEdit = false;
         WindowTitle.Text = "➕ Add New Resolution";
     }
 
     // Edit mode
-    public AddEditResolutionWindow(IResolutionService service, User currentUser, Resolution existing)
+    public AddEditResolutionWindow(IResolutionService service, ApiResolution existing)
     {
         InitializeComponent();
         _service = service;
-        _currentUser = currentUser;
         _existing = existing;
         _isEdit = true;
         WindowTitle.Text = $"✏️ Edit Resolution — {existing.ResolutionNumber}";
@@ -37,43 +41,57 @@ public partial class AddEditResolutionWindow : Window
         PopulateFields(existing);
     }
 
-    private void PopulateFields(Resolution r)
+    private void PopulateFields(ApiResolution r)
     {
-        ResNumberBox.Text     = r.ResolutionNumber;
-        SbTermBox.Text        = r.SbTerm;
-        SessionInfoBox.Text   = r.SessionInfo;
-        CommitteeBox.Text     = r.Committee;
-        TitleBox.Text         = r.Title;
-        SponsorBox.Text       = r.Sponsor;
-        FilePathBox.Text      = r.DocumentPath ?? "";
+        ResNumberBox.Text   = r.ResolutionNumber;
+        SbTermBox.Text      = r.SbTerm ?? "";
+        SessionInfoBox.Text = r.SessionInfo ?? "";
+        CommitteeBox.Text   = r.Committee ?? "";
+        TitleBox.Text       = r.Title;
+        SponsorBox.Text     = r.Sponsor ?? "";
+        FilePathBox.Text    = r.DocumentPath ?? "";
 
         if (r.DateApproved.HasValue)
             DateApprovedPicker.SelectedDate = r.DateApproved.Value.ToDateTime(TimeOnly.MinValue);
     }
 
-    // ── File upload ──────────────────────────────────────────────
+    // ── File selection (upload happens on Save) ─────────────────
 
     private void BrowseFile_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog
         {
             Title = "Select Resolution Document",
-            Filter = "All Files (*.*)|*.*"
+            Filter = "Documents (*.pdf;*.doc;*.docx)|*.pdf;*.doc;*.docx"
         };
         if (dlg.ShowDialog() != true) return;
 
-        try
+        var info = new FileInfo(dlg.FileName);
+        if (info.Length > MaxFileBytes)
         {
-            FilePathBox.Text = "Uploading...";
-            var url = StorageService.UploadResolutionFile(dlg.FileName);
-            FilePathBox.Text = url;
+            ShowError("File is too large. Maximum size is 20 MB.");
+            return;
         }
-        catch (Exception ex)
+
+        HideError();
+        _localDocumentPath = dlg.FileName;
+        FilePathBox.Text   = info.Name;
+    }
+
+    private void RemoveFileBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_localDocumentPath is not null)
         {
-            FilePathBox.Text = "";
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
-                MessageBox.Show($"Upload failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            // Undo the pick and fall back to whatever is already on the server.
+            _localDocumentPath = null;
+            FilePathBox.Text   = _existing?.DocumentPath ?? "";
+            return;
         }
+
+        if (!string.IsNullOrEmpty(_existing?.DocumentPath))
+            MessageBox.Show(
+                "Removing an existing document isn't supported by the API yet.\nPick a new file to replace it.",
+                "Not supported", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     // ── Save ─────────────────────────────────────────────────────
@@ -83,61 +101,46 @@ public partial class AddEditResolutionWindow : Window
     private static string? NullIfEmpty(string s) =>
         string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
-    private void SaveBtn_Click(object sender, RoutedEventArgs e)
+    private async void SaveBtn_Click(object sender, RoutedEventArgs e)
     {
         if (!Validate()) return;
+
+        SaveBtn.IsEnabled = false;
         try
         {
-            if (_isEdit) SaveEdit();
-            else         SaveNew();
+            var input = BuildInput();
+
+            if (_isEdit)
+                await _service.UpdateAsync(_existing!.Id, input);
+            else
+                SavedResolution = await _service.AddAsync(input);
+
             DialogResult = true;
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             ShowError($"Save failed: {ex.Message}");
         }
+        finally
+        {
+            SaveBtn.IsEnabled = true;
+        }
     }
 
-    private void SaveNew()
+    private ResolutionInput BuildInput() => new()
     {
-        var resolution = BuildResolution();
-        _service.Add(resolution);
-        SavedResolution = resolution;
-    }
-
-    private void SaveEdit()
-    {
-        var r = _existing!;
-        r.ResolutionNumber  = ResNumberBox.Text.Trim();
-        r.SbTerm            = SbTermBox.Text.Trim();
-        r.SessionInfo       = SessionInfoBox.Text.Trim();
-        r.Committee         = CommitteeBox.Text.Trim();
-        r.Title             = TitleBox.Text.Trim();
-        r.Sponsor           = SponsorBox.Text.Trim();
-        r.DateApproved      = DateApprovedPicker.SelectedDate.HasValue
-            ? DateOnly.FromDateTime(DateApprovedPicker.SelectedDate.Value) : null;
-        r.DocumentPath      = NullIfEmpty(FilePathBox.Text);
-
-        _service.Update(r);
-        SavedResolution = r;
-    }
-
-    private Resolution BuildResolution() => new()
-    {
-        ResolutionNumber = ResNumberBox.Text.Trim(),
-        SbTerm           = SbTermBox.Text.Trim(),
-        SessionInfo      = SessionInfoBox.Text.Trim(),
-        Committee        = CommitteeBox.Text.Trim(),
-        Title            = TitleBox.Text.Trim(),
-        Sponsor          = SponsorBox.Text.Trim(),
-        DateApproved     = DateApprovedPicker.SelectedDate.HasValue
+        ResolutionNumber  = ResNumberBox.Text.Trim(),
+        SbTerm            = NullIfEmpty(SbTermBox.Text),
+        SessionInfo       = NullIfEmpty(SessionInfoBox.Text),
+        Committee         = NullIfEmpty(CommitteeBox.Text),
+        Title             = TitleBox.Text.Trim(),
+        Sponsor           = NullIfEmpty(SponsorBox.Text),
+        DateApproved      = DateApprovedPicker.SelectedDate.HasValue
             ? DateOnly.FromDateTime(DateApprovedPicker.SelectedDate.Value) : null,
-        DocumentPath     = NullIfEmpty(FilePathBox.Text),
-        AddedBy          = _currentUser.Username,
-        AddedAt          = DateTime.UtcNow
+        LocalDocumentPath = _localDocumentPath
     };
 
     private bool Validate()
@@ -154,11 +157,6 @@ public partial class AddEditResolutionWindow : Window
         ErrorText.Text = msg;
         ErrorBanner.Visibility = Visibility.Visible;
         return false;
-    }
-
-    private void RemoveFileBtn_Click(object sender, RoutedEventArgs e)
-    {
-        FilePathBox.Text = "";
     }
 
     private void HideError() => ErrorBanner.Visibility = Visibility.Collapsed;

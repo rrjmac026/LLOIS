@@ -33,10 +33,13 @@
                   SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Timestamp"
-                    Binding="{Binding TimestampPH, StringFormat=\{0:MM/dd/yyyy HH:mm:ss\}}"
+                    Binding="{Binding TimestampDisplay}"
+                    SortMemberPath="CreatedAt"
                     Width="160"/>
                 <DataGridTextColumn Header="User"
                     Binding="{Binding Username}" Width="130"/>
+                <DataGridTextColumn Header="Source"
+                    Binding="{Binding Source}" Width="80"/>
                 <DataGridTextColumn Header="Action"
                     Binding="{Binding Action}" Width="110"/>
                 <DataGridTextColumn Header="Details"

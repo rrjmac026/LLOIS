@@ -3,16 +3,16 @@ namespace LLOIS.Views;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class AddEditOrdinanceWindow : Window
 {
     private readonly IOrdinanceService _service;
-    private readonly Ordinance? _existing;
+    private readonly ApiOrdinance? _existing;
     private readonly bool _isEdit;
+    private string? _pickedLocalPdfPath;
 
-    public Ordinance? SavedOrdinance { get; private set; }
+    public ApiOrdinance? SavedOrdinance { get; private set; }
 
     // Add mode
     public AddEditOrdinanceWindow(IOrdinanceService service)
@@ -23,10 +23,15 @@ public partial class AddEditOrdinanceWindow : Window
         WindowTitle.Text = "➕ Add New Ordinance";
         StatusCombo.SelectedIndex = 0;
         TypeCombo.SelectedIndex = 0;
+
+        VersionSectionCard.Visibility   = Visibility.Visible;
+        VersionSectionHeader.Visibility = Visibility.Visible;
+        VersionSeparator.Visibility     = Visibility.Visible;
+        VersionSection.Visibility       = Visibility.Visible;
     }
 
     // Edit mode
-    public AddEditOrdinanceWindow(IOrdinanceService service, Ordinance existing)
+    public AddEditOrdinanceWindow(IOrdinanceService service, ApiOrdinance existing)
     {
         InitializeComponent();
         _service = service;
@@ -34,8 +39,6 @@ public partial class AddEditOrdinanceWindow : Window
         _isEdit = true;
         WindowTitle.Text = $"✏️ Edit Ordinance — {existing.OrdinanceNumber}";
 
-        // Always show the version section in Edit mode now — either to edit
-        // the existing latest version, or to create a missing Version 1.
         VersionSectionCard.Visibility   = Visibility.Visible;
         VersionSectionHeader.Visibility = Visibility.Visible;
         VersionSeparator.Visibility     = Visibility.Visible;
@@ -48,37 +51,34 @@ public partial class AddEditOrdinanceWindow : Window
         {
             VersionTitleBox.Text   = latest.Title;
             VersionContentBox.Text = latest.Content;
-            EnactedByBox.Text      = latest.EnactedBy;
-            VersionDatePicker.SelectedDate = latest.DateEnacted.ToDateTime(TimeOnly.MinValue);
         }
     }
 
-    private void PopulateFields(Ordinance o)
+    private void PopulateFields(ApiOrdinance o)
     {
         OrdNumberBox.Text       = o.OrdinanceNumber;
-        OrdNumberBox.IsReadOnly = true;
-        SeriesBox.Text          = o.SeriesNumber;
+        SeriesBox.Text          = o.SeriesNumber ?? "";
         TitleBox.Text           = o.Title;
-        SubjectBox.Text         = o.Subject;
-        SponsorBox.Text         = o.Sponsor;
-        CommitteeBox.Text       = o.Committee;
+        SubjectBox.Text         = o.Subject ?? "";
+        SponsorBox.Text         = o.Sponsor ?? "";
+        CommitteeBox.Text       = o.Committee ?? "";
         PdfPathBox.Text         = o.DocumentPath ?? "";
         ReferenceNumberBox.Text = o.ReferenceNumber ?? "";
-        NrsNsbBox.Text          = o.NRS_NSB ?? "";
+        NrsNsbBox.Text          = o.NrsNsb ?? "";
         NomenclatureBox.Text    = o.Nomenclature ?? "";
         LocationBox.Text        = o.Location ?? "";
 
-        SetComboByContent(TypeCombo, o.Type.ToString());
-        SetComboByContent(StatusCombo, o.Status switch
+        SetComboByContent(TypeCombo, ToTitleCase(o.Type));
+        SetComboByContent(StatusCombo, o.Status.ToLowerInvariant() switch
         {
-            OrdinanceStatus.InEffect    => "In Effect",
-            OrdinanceStatus.UnderReview => "Under Review",
-            _ => o.Status.ToString()
+            "in_effect"    => "In Effect",
+            "under_review" => "Under Review",
+            _              => ToTitleCase(o.Status)
         });
-        if (o.FinalAction.HasValue)
-            SetComboByContent(FinalActionCombo, o.FinalAction.Value.ToString());
-        if (o.State.HasValue)
-            SetComboByContent(StateCombo, o.State.Value.ToString());
+        if (!string.IsNullOrEmpty(o.FinalAction))
+            SetComboByContent(FinalActionCombo, o.FinalAction);
+        if (!string.IsNullOrEmpty(o.State))
+            SetComboByContent(StateCombo, o.State);
 
         if (o.DatePassed.HasValue)
             DatePassedPicker.SelectedDate = o.DatePassed.Value.ToDateTime(TimeOnly.MinValue);
@@ -87,6 +87,9 @@ public partial class AddEditOrdinanceWindow : Window
         if (o.DatePublished.HasValue)
             DatePublishedPicker.SelectedDate = o.DatePublished.Value.ToDateTime(TimeOnly.MinValue);
     }
+
+    private static string ToTitleCase(string s) =>
+        s.Length == 0 ? s : char.ToUpper(s[0]) + s[1..];
 
     private static void SetComboByContent(ComboBox combo, string content)
     {
@@ -108,18 +111,10 @@ public partial class AddEditOrdinanceWindow : Window
         };
         if (dlg.ShowDialog() != true) return;
 
-        try
-        {
-            PdfPathBox.Text = "Uploading...";
-            var url = StorageService.UploadPdf(dlg.FileName);
-            PdfPathBox.Text = url;
-        }
-        catch (Exception ex)
-        {
-            PdfPathBox.Text = "";
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
-                MessageBox.Show($"Upload failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+        // Actual upload happens server-side when Save is clicked — this just
+        // remembers the local path and shows the filename in the meantime.
+        _pickedLocalPdfPath = dlg.FileName;
+        PdfPathBox.Text = System.IO.Path.GetFileName(dlg.FileName) + " (will upload on save)";
     }
 
     private void CancelBtn_Click(object sender, RoutedEventArgs e) => DialogResult = false;
@@ -127,110 +122,66 @@ public partial class AddEditOrdinanceWindow : Window
     private static string? NullIfEmpty(string s) =>
         string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
-    private void SaveBtn_Click(object sender, RoutedEventArgs e)
+    private async void SaveBtn_Click(object sender, RoutedEventArgs e)
     {
         if (!Validate()) return;
+        SaveBtn.IsEnabled = false;
         try
         {
-            if (_isEdit) SaveEdit();
-            else         SaveNew();
+            if (_isEdit) await SaveEditAsync();
+            else         await SaveNewAsync();
             DialogResult = true;
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             ShowError($"Save failed: {ex.Message}");
         }
-    }
-
-    private void SaveNew()
-    {
-        if (VersionDatePicker.SelectedDate is null)
-        { ShowError("Please select a Date Enacted for the initial version."); return; }
-
-        var ordinance = BuildOrdinance();
-        ordinance.AddedBy = SessionContext.CurrentUser?.Username;
-        ordinance.AddedAt = DateTime.UtcNow;
-
-        ordinance.Versions.Add(new OrdinanceVersion
+        finally
         {
-            VersionNumber = 1,
-            Title        = VersionTitleBox.Text.Trim(),
-            Content      = VersionContentBox.Text.Trim(),
-            EnactedBy    = EnactedByBox.Text.Trim(),
-            DateEnacted  = DateOnly.FromDateTime(VersionDatePicker.SelectedDate.Value)
-        });
-
-        _service.Add(ordinance);
-        SavedOrdinance = ordinance;
+            SaveBtn.IsEnabled = true;
+        }
     }
 
-    private void SaveEdit()
+    private async Task SaveNewAsync()
+    {
+        var input = BuildInput();
+        input.InitialVersion = new OrdinanceVersionInput
+        {
+            Title       = VersionTitleBox.Text.Trim(),
+            Content     = VersionContentBox.Text.Trim(),
+            EnactedBy   = EnactedByBox.Text.Trim(),
+            DateEnacted = DateOnly.FromDateTime(VersionDatePicker.SelectedDate!.Value)
+        };
+
+        SavedOrdinance = await _service.AddAsync(input);
+    }
+
+    private async Task SaveEditAsync()
     {
         var o = _existing!;
-        o.SeriesNumber    = SeriesBox.Text.Trim();
-        o.Title           = TitleBox.Text.Trim();
-        o.Subject         = SubjectBox.Text.Trim();
-        o.Sponsor         = SponsorBox.Text.Trim();
-        o.Committee       = CommitteeBox.Text.Trim();
-        o.Type            = ParseType();
-        o.Status          = ParseStatus();
-        o.FinalAction     = ParseFinalAction();
-        o.State           = ParseState();
-        o.ReferenceNumber = NullIfEmpty(ReferenceNumberBox.Text);
-        o.NRS_NSB         = NullIfEmpty(NrsNsbBox.Text);
-        o.Nomenclature    = NullIfEmpty(NomenclatureBox.Text);
-        o.Location        = NullIfEmpty(LocationBox.Text);
-        o.DatePassed      = DatePassedPicker.SelectedDate.HasValue
-            ? DateOnly.FromDateTime(DatePassedPicker.SelectedDate.Value) : null;
-        o.DateApproved    = DateApprovedPicker.SelectedDate.HasValue
-            ? DateOnly.FromDateTime(DateApprovedPicker.SelectedDate.Value) : null;
-        o.DatePublished   = DatePublishedPicker.SelectedDate.HasValue
-            ? DateOnly.FromDateTime(DatePublishedPicker.SelectedDate.Value) : null;
-        o.DocumentPath    = NullIfEmpty(PdfPathBox.Text);
+        var input = BuildInput();
 
-        var latest = o.LatestVersion;
-        if (latest is not null && VersionDatePicker.SelectedDate is not null)
-        {
-            // Edit the existing latest version directly — no new version created.
-            latest.Title       = VersionTitleBox.Text.Trim();
-            latest.Content     = VersionContentBox.Text.Trim();
-            latest.EnactedBy   = EnactedByBox.Text.Trim();
-            latest.DateEnacted = DateOnly.FromDateTime(VersionDatePicker.SelectedDate.Value);
-        }
-        else if (o.Versions.Count == 0 && VersionDatePicker.SelectedDate is not null)
-        {
-            // No version exists yet — create Version 1.
-            o.Versions.Add(new OrdinanceVersion
-            {
-                VersionNumber = 1,
-                Title        = VersionTitleBox.Text.Trim(),
-                Content      = VersionContentBox.Text.Trim(),
-                EnactedBy    = EnactedByBox.Text.Trim(),
-                DateEnacted  = DateOnly.FromDateTime(VersionDatePicker.SelectedDate.Value)
-            });
-        }
-
-        _service.Update(o);
-        SavedOrdinance = o;
+        await _service.UpdateAsync(o.Id, input);
+        SavedOrdinance = await _service.GetDetailsAsync(o.Id);
     }
 
-    private Ordinance BuildOrdinance() => new()
+    private OrdinanceInput BuildInput() => new()
     {
         OrdinanceNumber   = OrdNumberBox.Text.Trim(),
-        SeriesNumber      = SeriesBox.Text.Trim(),
+        SeriesNumber      = NullIfEmpty(SeriesBox.Text),
         Title             = TitleBox.Text.Trim(),
-        Subject           = SubjectBox.Text.Trim(),
-        Sponsor           = SponsorBox.Text.Trim(),
-        Committee         = CommitteeBox.Text.Trim(),
+        Subject           = NullIfEmpty(SubjectBox.Text),
+        Sponsor           = NullIfEmpty(SponsorBox.Text),
+        Committee         = NullIfEmpty(CommitteeBox.Text),
         Type              = ParseType(),
         Status            = ParseStatus(),
         FinalAction       = ParseFinalAction(),
         State             = ParseState(),
         ReferenceNumber   = NullIfEmpty(ReferenceNumberBox.Text),
-        NRS_NSB           = NullIfEmpty(NrsNsbBox.Text),
+        NrsNsb            = NullIfEmpty(NrsNsbBox.Text),
         Nomenclature      = NullIfEmpty(NomenclatureBox.Text),
         Location          = NullIfEmpty(LocationBox.Text),
         DatePassed        = DatePassedPicker.SelectedDate.HasValue
@@ -239,51 +190,53 @@ public partial class AddEditOrdinanceWindow : Window
             ? DateOnly.FromDateTime(DateApprovedPicker.SelectedDate.Value) : null,
         DatePublished     = DatePublishedPicker.SelectedDate.HasValue
             ? DateOnly.FromDateTime(DatePublishedPicker.SelectedDate.Value) : null,
-        DocumentPath      = NullIfEmpty(PdfPathBox.Text)
+        LocalDocumentPath = _pickedLocalPdfPath
     };
 
-    private TypeOfLaw ParseType() =>
+    private string ParseType() =>
         (TypeCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() switch
         {
-            "Resolution" => TypeOfLaw.Resolution,
-            "Minutes"    => TypeOfLaw.Minutes,
-            _            => TypeOfLaw.Ordinance
+            "Resolution" => "resolution",
+            "Minutes"    => "minutes",
+            _            => "ordinance"
         };
 
-    private OrdinanceStatus ParseStatus() =>
+    private string ParseStatus() =>
         (StatusCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() switch
         {
-            "Amended"      => OrdinanceStatus.Amended,
-            "Superseded"   => OrdinanceStatus.Superseded,
-            "Repealed"     => OrdinanceStatus.Repealed,
-            "Under Review" => OrdinanceStatus.UnderReview,
-            _              => OrdinanceStatus.InEffect
+            "Amended"      => "amended",
+            "Superseded"   => "superseded",
+            "Repealed"     => "repealed",
+            "Under Review" => "under_review",
+            _              => "in_effect"
         };
 
-    private FinalAction? ParseFinalAction() =>
+    private string? ParseFinalAction() =>
         (FinalActionCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() switch
         {
-            "Approving"   => Models.FinalAction.Approving,
-            "Authorizing" => Models.FinalAction.Authorizing,
-            "Creating"    => Models.FinalAction.Creating,
-            "Declaring"   => Models.FinalAction.Declaring,
-            "Conducting"  => Models.FinalAction.Conducting,
-            "Extending"   => Models.FinalAction.Extending,
+            "Approving"   => "approving",
+            "Authorizing" => "authorizing",
+            "Creating"    => "creating",
+            "Declaring"   => "declaring",
+            "Conducting"  => "conducting",
+            "Extending"   => "extending",
             _             => null
         };
 
-    private OrdinanceState? ParseState() =>
+    private string? ParseState() =>
         (StateCombo.SelectedItem as ComboBoxItem)?.Content?.ToString() switch
         {
-            "Draft"    => OrdinanceState.Draft,
-            "Passed"   => OrdinanceState.Passed,
-            "Enacted"  => OrdinanceState.Enacted,
-            _          => null
+            "Draft"   => "draft",
+            "Passed"  => "passed",
+            "Enacted" => "enacted",
+            _         => null
         };
 
     private bool Validate()
     {
         HideError();
+        if (_isEdit) return true;
+
         if (string.IsNullOrWhiteSpace(OrdNumberBox.Text))  return ShowError("Ordinance Number is required.");
         if (string.IsNullOrWhiteSpace(SeriesBox.Text))     return ShowError("Series Number is required.");
         if (string.IsNullOrWhiteSpace(TitleBox.Text))      return ShowError("Title is required.");
@@ -307,6 +260,7 @@ public partial class AddEditOrdinanceWindow : Window
     private void RemovePdfBtn_Click(object sender, RoutedEventArgs e)
     {
         PdfPathBox.Text = "";
+        _pickedLocalPdfPath = null;
     }
 
     private void HideError() => ErrorBanner.Visibility = Visibility.Collapsed;

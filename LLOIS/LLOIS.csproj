@@ -19,7 +19,6 @@
     <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
     <PackageReference Include="DotNetEnv" Version="3.2.0" />
     <PackageReference Include="ClosedXML" Version="0.104.1" />
-    <PackageReference Include="Google.Apis.Drive.v3" Version="1.75.0.4218" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.9">
       <PrivateAssets>all</PrivateAssets>
@@ -38,9 +37,33 @@
     <None Update=".env">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="secrets\oauth-client.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Temporarily excluded from the build — not yet converted to the async
+         API pattern. Remove each line as that view/service gets migrated. -->
+
+    <!-- Ordinances: OrdinancesView + AddEditOrdinanceWindow are converted —
+         only AddAmendmentWindow stays excluded, since amendments are out of
+         scope for now and it still targets the old sync API/service shape. -->
+    <Compile Remove="Views\Ordinances\AddAmendmentWindow.xaml.cs" />
+    <Page Remove="Views\Ordinances\AddAmendmentWindow.xaml" />
+
+    <Compile Remove="Views\Settings\**\*.cs" />
+    <Page Remove="Views\Settings\**\*.xaml" />
+
+    <!-- Converted Settings files, re-included despite the blanket folder exclusion above.
+         UpdateProgressWindow is a general update dialog also used by MainView. -->
+    <Compile Include="Views\Settings\SettingsView.xaml.cs" />
+    <Page Include="Views\Settings\SettingsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="Views\Settings\UpdateProgressWindow.xaml.cs" />
+    <Page Include="Views\Settings\UpdateProgressWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
 </Project>

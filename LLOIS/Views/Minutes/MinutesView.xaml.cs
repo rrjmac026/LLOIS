@@ -1,21 +1,25 @@
 namespace LLOIS.Views;
 
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class MinutesView : UserControl
 {
     private readonly IMinutesService _service;
-    private readonly IAuthService    _auth;
-    private readonly User            _currentUser;
-    private string    _searchQuery = string.Empty;
-    private Minutes?  _selectedMinutes;
-    private bool      _loaded = false;
+    private readonly ApiUser         _currentUser;
+    private string      _searchQuery = string.Empty;
+    private ApiMinutes? _selectedMinutes;
+    private bool        _loaded = false;
+
+    // Set while we assign ItemsSource / SelectedItem from code, so a background
+    // refresh doesn't trigger a second GetDetails call per tick.
+    private bool _suppressSelection = false;
+
+    // RoleName comes straight from Laravel's UserRole enum (login response "role_name").
+    private bool CanWrite => _currentUser.RoleName is "Admin" or "SuperAdmin" or "Encoder";
 
     private readonly System.Windows.Threading.DispatcherTimer _searchTimer = new()
     {
@@ -27,19 +31,25 @@ public partial class MinutesView : UserControl
         Interval = TimeSpan.FromSeconds(15)   // adjust to taste
     };
 
-    public MinutesView(IMinutesService service, IAuthService auth, User user)
+    // `auth` is kept only so the existing call in MainView still compiles.
+    // Audit logging now happens server-side, so it's unused here.
+    public MinutesView(IMinutesService service, IAuthService auth, ApiUser user)
     {
         InitializeComponent();
         _service     = service;
-        _auth        = auth;
         _currentUser = user;
 
-        bool canWrite = user.Role is UserRole.Admin or UserRole.SuperAdmin or UserRole.Encoder;
-        AddBtn.Visibility = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        AddBtn.Visibility = CanWrite ? Visibility.Visible : Visibility.Collapsed;
 
         _searchTimer.Tick += SearchTimer_Tick;
 
-        _refreshTimer.Tick += async (s, e) => await LoadMinutesAsync();
+        // Every tick is now a real API call, so skip it when this view isn't on screen
+        // or nobody is logged in (otherwise a logged-out session would keep hitting 401s).
+        _refreshTimer.Tick += async (s, e) =>
+        {
+            if (IsVisible && SessionContext.CurrentUser is not null)
+                await LoadMinutesAsync();
+        };
         _refreshTimer.Start();
     }
 
@@ -58,7 +68,7 @@ public partial class MinutesView : UserControl
     {
         try
         {
-            var results = await Task.Run(() => _service.GetAll().ToList());
+            var results = (await _service.GetAllAsync()).ToList();
 
             if (!string.IsNullOrWhiteSpace(_searchQuery))
             {
@@ -73,27 +83,35 @@ public partial class MinutesView : UserControl
                 results = results.Where(m => m.SessionType == type).ToList();
             }
 
-            MinutesList.ItemsSource = results;
-            ResultCount.Text = $"{results.Count} minutes found";
-
-            // Preserve selection/detail view across background refreshes
-            if (_selectedMinutes is not null)
+            _suppressSelection = true;
+            try
             {
-                var stillExists = results.FirstOrDefault(m => m.Id == _selectedMinutes.Id);
-                if (stillExists is not null)
-                {
-                    _selectedMinutes = stillExists;
-                    MinutesList.SelectedItem = stillExists;
-                    ShowDetail(stillExists);
-                    return;
-                }
-            }
+                MinutesList.ItemsSource = results;
+                ResultCount.Text = $"{results.Count} minutes found";
 
-            ClearDetail();
+                // Preserve selection/detail view across background refreshes
+                if (_selectedMinutes is not null)
+                {
+                    var stillExists = results.FirstOrDefault(m => m.Id == _selectedMinutes.Id);
+                    if (stillExists is not null)
+                    {
+                        _selectedMinutes = stillExists;
+                        MinutesList.SelectedItem = stillExists;
+                        ShowDetail(stillExists);
+                        return;
+                    }
+                }
+
+                ClearDetail();
+            }
+            finally
+            {
+                _suppressSelection = false;
+            }
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading minutes:\n{ex.Message}", "Error",
@@ -118,19 +136,21 @@ public partial class MinutesView : UserControl
 
     private async void SessionTypeFilter_Changed(object sender, SelectionChangedEventArgs e)
     {
+        // Fires during InitializeComponent, before the constructor assigns _service.
         if (_service is null) return;
         await LoadMinutesAsync();
     }
 
     // ── Selection ──────────────────────────────────────────────────────────
 
-    private void MinutesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void MinutesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (MinutesList.SelectedItem is not Minutes m) return;
+        if (_suppressSelection) return;
+        if (MinutesList.SelectedItem is not ApiMinutes m) return;
 
         try
         {
-            var detail = _service.GetDetails(m.Id);
+            var detail = await _service.GetDetailsAsync(m.Id);
             if (detail is null) return;
 
             _selectedMinutes = detail;
@@ -138,7 +158,7 @@ public partial class MinutesView : UserControl
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading details:\n{ex.Message}", "Error",
@@ -148,37 +168,26 @@ public partial class MinutesView : UserControl
 
     // ── CRUD ───────────────────────────────────────────────────────────────
 
-    private void AddBtn_Click(object sender, RoutedEventArgs e)
+    private async void AddBtn_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new AddEditMinutesWindow(_service) { Owner = Window.GetWindow(this) };
         if (dlg.ShowDialog() == true)
         {
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "ADD", "Added minutes record"); }
-                catch { /* non-critical */ }
-            });
-            _loaded = false;
-            ReloadIfNeeded();
+            await LoadMinutesAsync();
 
             MessageBox.Show("Minutes record created successfully.", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
-    private void EditBtn_Click(object sender, RoutedEventArgs e)
+    private async void EditBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_selectedMinutes is null) return;
         var dlg = new AddEditMinutesWindow(_service, _selectedMinutes) { Owner = Window.GetWindow(this) };
         if (dlg.ShowDialog() == true)
         {
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "EDIT", "Edited minutes record"); }
-                catch { /* non-critical */ }
-            });
-            _loaded = false;
-            ReloadIfNeeded();
+            // Reload keeps the same record selected and refreshes its detail panel.
+            await LoadMinutesAsync();
 
             MessageBox.Show("Minutes record updated successfully.", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
@@ -211,13 +220,7 @@ public partial class MinutesView : UserControl
 
         try
         {
-            var id = _selectedMinutes.Id;
-            await Task.Run(() => _service.Delete(id));
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "DELETE", "Deleted minutes record"); }
-                catch { /* non-critical */ }
-            });
+            await _service.DeleteAsync(_selectedMinutes.Id);
             await LoadMinutesAsync();
 
             MessageBox.Show("Minutes record deleted successfully.", "Success",
@@ -225,7 +228,7 @@ public partial class MinutesView : UserControl
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Delete failed:\n{ex.Message}", "Error",
@@ -235,21 +238,22 @@ public partial class MinutesView : UserControl
 
     // ── ShowDetail ─────────────────────────────────────────────────────────
 
-    private void ShowDetail(Minutes m)
+    private void ShowDetail(ApiMinutes m)
     {
         DetailPanel.Visibility = Visibility.Visible;
-        ActionBar.Visibility   = Visibility.Visible;
 
-        bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
+        var writeVisibility = CanWrite ? Visibility.Visible : Visibility.Collapsed;
 
+        // The inline buttons are the ones used in the detail card; the top-bar
+        // Edit/Open buttons stay hidden (same as before).
         EditBtn.Visibility     = Visibility.Collapsed;
         OpenFileBtn.Visibility = Visibility.Collapsed;
-        DeleteBtn.Visibility   = canWrite ? Visibility.Visible : Visibility.Collapsed;
-        ActionBar.Visibility   = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        DeleteBtn.Visibility   = writeVisibility;
+        ActionBar.Visibility   = writeVisibility;
 
-        InlineActionRow.Visibility  = canWrite ? Visibility.Visible : Visibility.Collapsed;
-        InlineEditBtn.Visibility    = canWrite ? Visibility.Visible : Visibility.Collapsed;
-        InlineOpenFileBtn.Visibility = m.DocumentPath is not null ? Visibility.Visible : Visibility.Collapsed;
+        InlineActionRow.Visibility   = writeVisibility;
+        InlineEditBtn.Visibility     = writeVisibility;
+        InlineOpenFileBtn.Visibility = !string.IsNullOrEmpty(m.DocumentPath) ? Visibility.Visible : Visibility.Collapsed;
 
         DetailId.Text          = m.SessionType;
         DetailSessionType.Text = m.SessionType;

@@ -1,34 +1,21 @@
 namespace LLOIS.Views;
 
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using LLOIS.Data;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class SettingsView : UserControl
 {
-    private readonly User                   _currentUser;
-    private readonly IAuthService           _auth;
-    private readonly SimpleDbContextFactory _dbFactory;
-
-    public void RefreshUpdateCheck() => _ = CheckForUpdateSilentlyAsync();
-
-    public SettingsView(User currentUser, IAuthService auth, SimpleDbContextFactory dbFactory)
+    public SettingsView()
     {
         InitializeComponent();
-        _currentUser = currentUser;
-        _auth        = auth;
-        _dbFactory   = dbFactory;
 
         VersionLabel.Text = $"DLIS version {App.CurrentVersion}";
 
-        bool isAdmin = currentUser.Role == UserRole.Admin;
-        BackupBtn.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
-
         _ = CheckForUpdateSilentlyAsync();
     }
+
+    public void RefreshUpdateCheck() => _ = CheckForUpdateSilentlyAsync();
 
     private async Task CheckForUpdateSilentlyAsync()
     {
@@ -93,63 +80,8 @@ public partial class SettingsView : UserControl
             CheckUpdateBtn.IsEnabled = true;
             UpdateStatusText.Text = "Update check failed.";
 
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (!ConnectionFailureHandler.HandleIfApiFailure(ex))
                 MessageBox.Show($"Update check failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    // ── Backup Data ────────────────────────────────────────────────────────
-
-    private async void BackupBtn_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new Microsoft.Win32.SaveFileDialog
-        {
-            Filter = "ZIP Archive (*.zip)|*.zip",
-            FileName = $"DLIS_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip"
-        };
-        if (dlg.ShowDialog() != true) return;
-
-        BackupBtn.IsEnabled = false;
-
-        var progressWindow = new UpdateProgressWindow { Owner = Window.GetWindow(this) };
-        progressWindow.Title = "Backing Up DLIS";
-        progressWindow.SetIndeterminate();
-        progressWindow.Show();
-
-        var progress = new Progress<string>(status =>
-        {
-            BackupStatusText.Text = status;
-            progressWindow.SetStatus(status);
-        });
-
-        try
-        {
-            await BackupService.CreateBackupAsync(_dbFactory, dlg.FileName, progress);
-
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "BACKUP", $"Created data backup: {Path.GetFileName(dlg.FileName)}"); }
-                catch { /* non-critical */ }
-            });
-
-            BackupStatusText.Text = "Backup complete.";
-            progressWindow.Close();
-
-            MessageBox.Show($"Backup saved to:\n{dlg.FileName}", "Backup Complete",
-                MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-        catch (Exception ex)
-        {
-            progressWindow.Close();
-            BackupStatusText.Text = "Backup failed.";
-
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
-                MessageBox.Show($"Backup failed:\n{ex.Message}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            BackupBtn.IsEnabled = true;
         }
     }
 }

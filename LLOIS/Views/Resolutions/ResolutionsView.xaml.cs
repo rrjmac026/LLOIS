@@ -1,22 +1,22 @@
 namespace LLOIS.Views;
 
 using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class ResolutionsView : UserControl
 {
     private readonly IResolutionService _service;
-    private readonly IAuthService       _auth;
-    private readonly User               _currentUser;
-    private string      _searchQuery      = string.Empty;
-    private Resolution? _selectedResolution;
-    private bool        _loaded           = false;
+    private readonly ApiUser            _currentUser;
+    private string          _searchQuery        = string.Empty;
+    private ApiResolution?  _selectedResolution;
+    private bool            _loaded             = false;
+
+    // RoleName comes straight from Laravel's UserRole enum (login response "role_name").
+    private bool CanWrite => _currentUser.RoleName is "Admin" or "SuperAdmin" or "Encoder";
 
     public void Refresh() => _ = LoadResolutionsAsync();
 
@@ -25,15 +25,16 @@ public partial class ResolutionsView : UserControl
         Interval = TimeSpan.FromMilliseconds(300)
     };
 
-    public ResolutionsView(IResolutionService service, IAuthService auth, User user)
+    // `auth` is kept only so the existing call in MainView still compiles.
+    // Audit logging now happens server-side, so it's unused here — remove it
+    // from the constructor and from MainView whenever convenient.
+    public ResolutionsView(IResolutionService service, IAuthService auth, ApiUser user)
     {
         InitializeComponent();
         _service     = service;
-        _auth        = auth;
         _currentUser = user;
 
-        bool canWrite = user.Role is UserRole.Admin or UserRole.SuperAdmin or UserRole.Encoder;
-        AddBtn.Visibility = canWrite ? Visibility.Visible : Visibility.Collapsed;
+        AddBtn.Visibility = CanWrite ? Visibility.Visible : Visibility.Collapsed;
 
         _searchTimer.Tick += SearchTimer_Tick;
     }
@@ -51,8 +52,7 @@ public partial class ResolutionsView : UserControl
     {
         try
         {
-            var query   = _searchQuery;
-            var results = await Task.Run(() => _service.Search(query).ToList());
+            var results = (await _service.SearchAsync(_searchQuery)).ToList();
 
             ResolutionList.ItemsSource = results;
             ResultCount.Text = $"{results.Count} resolutions found";
@@ -60,7 +60,7 @@ public partial class ResolutionsView : UserControl
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading resolutions:\n{ex.Message}", "Error",
@@ -75,26 +75,21 @@ public partial class ResolutionsView : UserControl
         await LoadResolutionsAsync();
     }
 
-    private void ResolutionList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ResolutionList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ResolutionList.SelectedItem is not Resolution r) return;
+        if (ResolutionList.SelectedItem is not ApiResolution r) return;
 
         try
         {
-            var detail = _service.GetDetails(r.Id);
+            var detail = await _service.GetDetailsAsync(r.Id);
             if (detail is null) return;
 
             _selectedResolution = detail;
             ShowDetail(detail);
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "VIEW", $"Viewed resolution {r.ResolutionNumber}"); }
-                catch { /* non-critical */ }
-            });
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Error loading resolution details:\n{ex.Message}", "Error",
@@ -102,19 +97,12 @@ public partial class ResolutionsView : UserControl
         }
     }
 
-    private void AddBtn_Click(object sender, RoutedEventArgs e)
+    private async void AddBtn_Click(object sender, RoutedEventArgs e)
     {
-        var dlg = new AddEditResolutionWindow(_service, _currentUser) { Owner = Window.GetWindow(this) };
+        var dlg = new AddEditResolutionWindow(_service) { Owner = Window.GetWindow(this) };
         if (dlg.ShowDialog() == true)
         {
-            var num = dlg.SavedResolution?.ResolutionNumber;
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "ADD", $"Added resolution {num}"); }
-                catch { /* non-critical */ }
-            });
-            _loaded = false;
-            ReloadIfNeeded();
+            await LoadResolutionsAsync();
 
             MessageBox.Show("Resolution created successfully.", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
@@ -125,19 +113,15 @@ public partial class ResolutionsView : UserControl
     {
         if (_selectedResolution is null) return;
 
-        var dlg = new AddEditResolutionWindow(_service, _currentUser, _selectedResolution) { Owner = Window.GetWindow(this) };
-        if (dlg.ShowDialog() == true)
-        {
-            var num = _selectedResolution.ResolutionNumber;
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "EDIT", $"Edited resolution {num}"); }
-                catch { /* non-critical */ }
-            });
+        var id  = _selectedResolution.Id;
+        var dlg = new AddEditResolutionWindow(_service, _selectedResolution) { Owner = Window.GetWindow(this) };
+        if (dlg.ShowDialog() != true) return;
 
+        try
+        {
             await LoadResolutionsAsync();
 
-            var updated = _service.GetDetails(_selectedResolution.Id);
+            var updated = await _service.GetDetailsAsync(id);
             if (updated is not null)
             {
                 _selectedResolution = updated;
@@ -146,6 +130,14 @@ public partial class ResolutionsView : UserControl
 
             MessageBox.Show("Resolution updated successfully.", "Success",
                 MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
+                return;
+
+            MessageBox.Show($"Error refreshing resolution:\n{ex.Message}", "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -175,14 +167,7 @@ public partial class ResolutionsView : UserControl
 
         try
         {
-            var id = _selectedResolution.Id;
-            var num = _selectedResolution.ResolutionNumber;
-            await Task.Run(() => _service.Delete(id));
-            _ = Task.Run(() =>
-            {
-                try { _auth.LogAction(_currentUser, "DELETE", $"Deleted resolution {num}"); }
-                catch { /* non-critical */ }
-            });
+            await _service.DeleteAsync(_selectedResolution.Id);
             await LoadResolutionsAsync();
 
             MessageBox.Show("Resolution deleted successfully.", "Success",
@@ -190,7 +175,7 @@ public partial class ResolutionsView : UserControl
         }
         catch (Exception ex)
         {
-            if (ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
+            if (ConnectionFailureHandler.HandleIfApiFailure(ex))
                 return;
 
             MessageBox.Show($"Delete failed:\n{ex.Message}", "Error",
@@ -198,19 +183,17 @@ public partial class ResolutionsView : UserControl
         }
     }
 
-    private void ShowDetail(Resolution r)
+    private void ShowDetail(ApiResolution r)
     {
         DetailPanel.Visibility = Visibility.Visible;
 
-        bool canWrite = _currentUser.Role is UserRole.Admin or UserRole.Encoder;
-        bool isAdmin  = _currentUser.Role == UserRole.Admin;
+        var writeVisibility = CanWrite ? Visibility.Visible : Visibility.Collapsed;
 
-        ActionBar.Visibility = canWrite ? Visibility.Visible : Visibility.Collapsed;
-        DeleteBtn.Visibility = canWrite ? Visibility.Visible : Visibility.Collapsed;
-
-        InlineActionRow.Visibility  = canWrite ? Visibility.Visible : Visibility.Collapsed;
-        InlineEditBtn.Visibility    = canWrite ? Visibility.Visible : Visibility.Collapsed;
-        InlineOpenFileBtn.Visibility = r.DocumentPath is not null ? Visibility.Visible : Visibility.Collapsed;
+        ActionBar.Visibility         = writeVisibility;
+        DeleteBtn.Visibility         = writeVisibility;
+        InlineActionRow.Visibility   = writeVisibility;
+        InlineEditBtn.Visibility     = writeVisibility;
+        InlineOpenFileBtn.Visibility = !string.IsNullOrEmpty(r.DocumentPath) ? Visibility.Visible : Visibility.Collapsed;
 
         DetailId.Text      = $"Resolution No. {r.ResolutionNumber}  ·  {r.SbTerm}";
         DetailTitle.Text   = r.Title;
@@ -219,7 +202,7 @@ public partial class ResolutionsView : UserControl
         PdfBadge.Visibility = !string.IsNullOrEmpty(r.DocumentPath) ? Visibility.Visible : Visibility.Collapsed;
 
         MetadataGrid.Children.Clear();
-        AddMetaCell(r.Committee, "Committee");
+        AddMetaCell(r.Committee ?? "—", "Committee");
         AddMetaCell(r.DateApproved?.ToString("MMMM dd, yyyy") ?? "—", "Date approved");
         if (!string.IsNullOrEmpty(r.AddedBy))
             AddMetaCell(r.AddedBy, "Added by");

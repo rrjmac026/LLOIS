@@ -1,88 +1,76 @@
 namespace LLOIS.Services;
 
-using BCrypt.Net;
-using Microsoft.EntityFrameworkCore;
-using LLOIS.Data;
-using LLOIS.Models;
-using LLOIS.Repositories;
-
-public class AuthService(IUserRepository userRepo, IDbContextFactory<AppDbContext> dbFactory) : IAuthService
+public interface IAuthService
 {
-    public User? Login(string username, string password)
-    {
-        var user = userRepo.GetByUsername(username);
-        if (user is null) return null;
-        if (!BCrypt.Verify(password, user.PasswordHash)) return null;
+    Task<ApiUser> LoginAsync(string username, string password, bool rememberMe = false);
+    void Logout();
+    Task<IEnumerable<ApiUserSummary>> GetAllUsersAsync();
+    Task CreateUserAsync(string username, string password, int role);
+    Task UpdateUserAsync(int userId, string newUsername, int newRole);
+    Task ResetPasswordAsync(int userId, string newPassword);
+    Task SetActiveStatusAsync(int userId, bool isActive);
+    Task<IEnumerable<ApiAuditLog>> GetRecentLogsAsync(int count = 200);
+}
 
-        LogAction(user, "LOGIN", $"{user.Username} logged in.");
-        return user;
+public enum ApiUserRole { Viewer = 0, Encoder = 1, Admin = 2, SuperAdmin = 3 }
+
+public class AuthService(ApiClient api) : IAuthService
+{
+    public async Task<ApiUser> LoginAsync(string username, string password, bool rememberMe = false)
+    {
+        var result = await api.LoginAsync(username, password);
+        SessionContext.Set(result.User, result.Token, rememberMe);
+        return result.User;
     }
 
-    public void LogAction(User user, string action, string details)
+    public void Logout()
     {
-        using var db = dbFactory.CreateDbContext();
-        db.AuditLogs.Add(new AuditLog
-        {
-            UserId = user.Id,
-            Username = user.Username,
-            Action = action,
-            Details = details
-        });
-        db.SaveChanges();
+        SessionContext.Clear();
+        api.ClearToken();
     }
 
-    public IEnumerable<User> GetAllUsers() => userRepo.GetAll();
+    public Task<IEnumerable<ApiUserSummary>> GetAllUsersAsync() =>
+        api.GetAsync<IEnumerable<ApiUserSummary>>("api/users")!;
 
-    public void CreateUser(string username, string password, UserRole role)
+    public Task CreateUserAsync(string username, string password, int role) =>
+        api.PostAsync<object>("api/users", new { username, password, role });
+
+    public Task UpdateUserAsync(int userId, string newUsername, int newRole) =>
+        api.PostAsync<object>($"api/users/{userId}?_method=PUT", new { username = newUsername, role = newRole });
+
+    public Task ResetPasswordAsync(int userId, string newPassword) =>
+        api.PostAsync<object>($"api/users/{userId}/password?_method=PUT", new { password = newPassword });
+
+    public Task SetActiveStatusAsync(int userId, bool isActive) =>
+        api.PostAsync<object>($"api/users/{userId}/status?_method=PUT", new { is_active = isActive });
+
+    public async Task<IEnumerable<ApiAuditLog>> GetRecentLogsAsync(int count = 200)
     {
-        using var db = dbFactory.CreateDbContext();
-        if (db.Users.Any(u => u.Username == username))
-            throw new InvalidOperationException($"Username '{username}' already exists.");
-
-        userRepo.Add(new User
-        {
-            Username = username,
-            PasswordHash = BCrypt.HashPassword(password),
-            Role = role,
-            IsActive = true
-        });
+        var result = await api.GetAsync<IEnumerable<ApiAuditLog>>($"api/audit-logs?count={count}");
+        return result ?? Enumerable.Empty<ApiAuditLog>();
     }
+}
 
-    public void UpdateUser(int userId, string newUsername, UserRole newRole)
-    {
-        using var db = dbFactory.CreateDbContext();
-        var user = db.Users.Find(userId)
-            ?? throw new InvalidOperationException("User not found.");
+public class ApiAuditLog
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string? Details { get; set; }
+    public string? Source { get; set; }
+    public DateTime? CreatedAt { get; set; }   // nullable: rows created by the old .NET app may have no created_at
 
-        if (db.Users.Any(u => u.Id != userId && u.Username == newUsername))
-            throw new InvalidOperationException($"Username '{newUsername}' already exists.");
+    // Laravel sends created_at in UTC ("...Z"); show Philippine time (UTC+8), like the old model.
+    public DateTime? TimestampPh => CreatedAt?.ToUniversalTime().AddHours(8);
+    public string TimestampDisplay => TimestampPh?.ToString("MM/dd/yyyy HH:mm:ss") ?? "";
+}
 
-        user.Username = newUsername;
-        user.Role = newRole;
-        db.SaveChanges();
-    }
 
-    public void ResetPassword(int userId, string newPassword)
-    {
-        using var db = dbFactory.CreateDbContext();
-        var user = db.Users.Find(userId)
-            ?? throw new InvalidOperationException("User not found.");
-        user.PasswordHash = BCrypt.HashPassword(newPassword);
-        db.SaveChanges();
-    }
 
-    public void SetActiveStatus(int userId, bool isActive)
-    {
-        using var db = dbFactory.CreateDbContext();
-        var user = db.Users.Find(userId)
-            ?? throw new InvalidOperationException("User not found.");
-        user.IsActive = isActive;
-        db.SaveChanges();
-    }
-
-    public IEnumerable<AuditLog> GetRecentLogs(int count = 200)
-    {
-        using var db = dbFactory.CreateDbContext();
-        return db.AuditLogs.OrderByDescending(l => l.Timestamp).Take(count).ToList();
-    }
+public class ApiUserSummary
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public ApiUserRole Role { get; set; }
+    public bool IsActive { get; set; }
 }

@@ -1,17 +1,15 @@
 namespace LLOIS.Views;
 
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using LLOIS.Models;
 
 public partial class ReportsView
 {
     private void PrintBtn_Click(object sender, RoutedEventArgs e)
     {
-        var tab = CurrentTabTitle;   // ✅ already captured on UI thread
+        var tab = CurrentTabTitle;
         var doc = BuildFlowDocument(tab);
         var dlg = new PrintDialog();
         if (dlg.ShowDialog() == true)
@@ -19,9 +17,8 @@ public partial class ReportsView
             dlg.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator,
                 $"LLOIS Report — {tab}");
 
-            var recordCount = _currentData.Count; // capture here too, to be safe
-            _ = Task.Run(() => _auth.LogAction(_currentUser, "PRINT",
-                $"Printed {tab} report ({recordCount} records)"));
+            LogReportAction("Report Printed",
+                $"Printed {tab} report ({_currentData.Count} records)");
         }
     }
 

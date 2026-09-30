@@ -1,19 +1,20 @@
 ﻿namespace LLOIS;
 
 using System.Windows;
-using LLOIS.Data;
-using LLOIS.Models;
 using LLOIS.Services;
 using LLOIS.Views;
 
 public partial class ShellWindow : Window
 {
     private bool _isRedirecting;
+    private readonly ApiClient _api;
 
     public ShellWindow()
     {
         InitializeComponent();
+        _api = new ApiClient("https://dlis-web.onrender.com/"); // TODO: move to config/appsettings
         ConnectionFailureHandler.ConnectionLost += OnConnectionLost;
+        ConnectionFailureHandler.SessionExpired += OnConnectionLost;
         ShowLogin();
     }
 
@@ -36,6 +37,8 @@ public partial class ShellWindow : Window
 
         try
         {
+            _api.ClearToken();
+
             if (!string.IsNullOrEmpty(message))
             {
                 MessageBox.Show(message, "Connection Lost", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -52,16 +55,16 @@ public partial class ShellWindow : Window
 
     private void ShowLogin()
     {
-        var loginView = new LoginView();
+        var loginView = new LoginView(_api);
         loginView.LoginSucceeded += OnLoginSucceeded;
         ViewHost.Content = loginView;
     }
 
-    private void OnLoginSucceeded(User user, SimpleDbContextFactory factory)
+    private void OnLoginSucceeded(ApiUser user, ApiClient api)
     {
-        var mainView = new MainView(user, factory);
+        var mainView = new MainView(user, api);
         mainView.LogoutRequested += OnLogoutRequested;
-        Title = $"DLIS — {user.Username} ({user.Role})";
+        Title = $"DLIS — {user.Username} ({user.RoleName})";
         ViewHost.Content = mainView;
         mainView.PreloadData();
     }

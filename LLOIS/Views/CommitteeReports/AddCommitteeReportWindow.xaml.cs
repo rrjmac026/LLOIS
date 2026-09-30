@@ -4,24 +4,26 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using Microsoft.Win32;
-using LLOIS.Models;
 using LLOIS.Services;
 
 public partial class AddCommitteeReportWindow : Window
 {
     private readonly ICommitteeReportService _service;
-    private readonly User _currentUser;
+    private readonly ApiUser _currentUser;
     private int? _editingId;
-    private string? _existingAddedBy;
-    private DateTime? _existingAddedAt;
+
+    // Ids of attachments that existed on the server when this window opened —
+    // used to detect which ones the user removed, so we can call
+    // DeleteAttachmentAsync for those specifically.
+    private readonly List<int> _originalAttachmentIds = [];
 
     // Unified display list — holds both existing (already-uploaded) attachments
     // and newly-picked local files not yet uploaded.
     private readonly ObservableCollection<AttachmentEntry> _attachments = [];
 
-    public CommitteeReport? SavedReport { get; private set; }
+    public ApiCommitteeReport? SavedReport { get; private set; }
 
-    public AddCommitteeReportWindow(ICommitteeReportService service, User currentUser)
+    public AddCommitteeReportWindow(ICommitteeReportService service, ApiUser currentUser)
     {
         InitializeComponent();
         _service = service;
@@ -29,20 +31,26 @@ public partial class AddCommitteeReportWindow : Window
         AttachmentsList.ItemsSource = _attachments;
     }
 
-    public AddCommitteeReportWindow(ICommitteeReportService service, User currentUser, CommitteeReport existing)
+    public AddCommitteeReportWindow(ICommitteeReportService service, ApiUser currentUser, ApiCommitteeReportDetails existing)
         : this(service, currentUser)
     {
-        _editingId = existing.Id;
-        _existingAddedBy = existing.AddedBy;
-        _existingAddedAt = existing.AddedAt;
-        ReportNumberBox.Text  = existing.ReportNumber;
-        DatePickerControl.SelectedDate = existing.Date?.ToDateTime(TimeOnly.MinValue);
-        SubmittedByBox.Text   = existing.SubmittedBy;
-        SponsoredByBox.Text   = existing.SponsoredBy;
-        SubjectBox.Text       = existing.Subject;
+        _editingId = existing.Report.Id;
+        ReportNumberBox.Text  = existing.Report.ReportNumber;
+        DatePickerControl.SelectedDate = existing.Report.Date?.ToDateTime(TimeOnly.MinValue);
+        SubmittedByBox.Text   = existing.Report.SubmittedBy;
+        SponsoredByBox.Text   = existing.Report.SponsoredBy;
+        SubjectBox.Text       = existing.Report.Subject;
 
         foreach (var a in existing.Attachments)
-            _attachments.Add(new AttachmentEntry { FileName = a.FileName, ExistingUrl = a.FilePath });
+        {
+            _originalAttachmentIds.Add(a.Id);
+            _attachments.Add(new AttachmentEntry
+            {
+                Id = a.Id,
+                FileName = a.FileName,
+                ExistingUrl = a.Url ?? a.FilePath
+            });
+        }
     }
 
     private void AddFilesBtn_Click(object sender, RoutedEventArgs e)
@@ -81,9 +89,8 @@ public partial class AddCommitteeReportWindow : Window
 
         SaveBtn.IsEnabled = false;
 
-        var report = new CommitteeReport
+        var input = new CommitteeReportInput
         {
-            Id           = _editingId ?? 0,
             ReportNumber = ReportNumberBox.Text.Trim(),
             Date         = DatePickerControl.SelectedDate.HasValue
                             ? DateOnly.FromDateTime(DatePickerControl.SelectedDate.Value)
@@ -91,50 +98,35 @@ public partial class AddCommitteeReportWindow : Window
             SubmittedBy  = SubmittedByBox.Text.Trim(),
             SponsoredBy  = SponsoredByBox.Text.Trim(),
             Subject      = SubjectBox.Text.Trim(),
-            AddedBy      = _editingId.HasValue ? _existingAddedBy : _currentUser.Username,
-            AddedAt      = _editingId.HasValue ? _existingAddedAt : DateTime.UtcNow
+            NewAttachmentFilePaths = _attachments
+                .Where(a => a.LocalPath is not null)
+                .Select(a => a.LocalPath!)
+                .ToList()
         };
 
         try
         {
-            foreach (var entry in _attachments)
+            if (_editingId.HasValue)
             {
-                if (entry.ExistingUrl is not null)
-                {
-                    // Already uploaded — carry it over unchanged
-                    report.Attachments.Add(new CommitteeReportAttachment
-                    {
-                        FileName = entry.FileName,
-                        FilePath = entry.ExistingUrl
-                    });
-                }
-                else if (entry.LocalPath is not null)
-                {
-                    // Newly picked — upload now
-                    var url = StorageService.UploadCommitteeReportFile(entry.LocalPath);
-                    report.Attachments.Add(new CommitteeReportAttachment
-                    {
-                        FileName = entry.FileName,
-                        FilePath = url
-                    });
-                }
+                // Remove attachments the user deleted from the list while editing
+                var remainingIds = _attachments.Where(a => a.Id.HasValue).Select(a => a.Id!.Value).ToHashSet();
+                foreach (var removedId in _originalAttachmentIds.Where(id => !remainingIds.Contains(id)))
+                    await _service.DeleteAttachmentAsync(_editingId.Value, removedId);
+
+                await _service.UpdateAsync(_editingId.Value, input);
+                SavedReport = new ApiCommitteeReport { Id = _editingId.Value, ReportNumber = input.ReportNumber };
+            }
+            else
+            {
+                SavedReport = await _service.AddAsync(input);
             }
 
-            if (_editingId.HasValue)
-                _service.Update(report);
-            else
-                _service.Add(report);
-
-            SavedReport = report;
             DialogResult = true;
         }
         catch (Exception ex)
         {
-            var detail = ex.InnerException?.Message ?? ex.Message;
-
-            if (!ConnectionFailureHandler.RedirectToLoginIfConnectionFailure(ex))
-                MessageBox.Show($"Failed to save report:\n{detail}", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+            if (!ConnectionFailureHandler.HandleIfApiFailure(ex))
+                MessageBox.Show($"Failed to save: {ex.Message}", "Error");
         }
         finally
         {
@@ -146,8 +138,9 @@ public partial class AddCommitteeReportWindow : Window
 
     private class AttachmentEntry
     {
+        public int? Id { get; set; }               // set for already-uploaded attachments (edit mode)
         public string FileName { get; set; } = string.Empty;
-        public string? LocalPath { get; set; }     // set for newly-picked, not-yet-uploaded files
-        public string? ExistingUrl { get; set; }   // set for already-uploaded attachments (edit mode)
+        public string? LocalPath { get; set; }      // set for newly-picked, not-yet-uploaded files
+        public string? ExistingUrl { get; set; }    // set for already-uploaded attachments (edit mode)
     }
 }

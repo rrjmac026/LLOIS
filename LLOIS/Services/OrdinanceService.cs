@@ -1,71 +1,84 @@
 namespace LLOIS.Services;
 
-using LLOIS.Models;
-using LLOIS.Repositories;
+using System.IO;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
-public class OrdinanceService(IOrdinanceRepository repo) : IOrdinanceService
+public class OrdinanceService(ApiClient api) : IOrdinanceService
 {
-    public IEnumerable<Ordinance> Search(string query)
+    public async Task<IEnumerable<ApiOrdinance>> SearchAsync(string? query = null, string? status = null)
     {
-        if (string.IsNullOrWhiteSpace(query))
-            return repo.GetAll();
+        var qs = new List<string>();
+        if (!string.IsNullOrWhiteSpace(query)) qs.Add($"search={Uri.EscapeDataString(query)}");
+        if (!string.IsNullOrWhiteSpace(status)) qs.Add($"status={Uri.EscapeDataString(status)}");
+        var suffix = qs.Count > 0 ? "?" + string.Join("&", qs) : "";
 
-        var keywords = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        return repo.GetAll().Where(o =>
-            keywords.All(k =>
-                (o.Title?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (o.OrdinanceNumber?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                (o.Sponsor?.Contains(k, StringComparison.OrdinalIgnoreCase) ?? false)
-            ));
+        var result = await api.GetAsync<PagedResult<ApiOrdinance>>($"api/ordinances{suffix}");
+        return result?.Data ?? Enumerable.Empty<ApiOrdinance>();
     }
 
-    public Ordinance? GetDetails(string id) => repo.GetById(id);
-    
-    public Ordinance? GetDetailsByPrimaryId(int id) => repo.GetByPrimaryId(id); 
+    public Task<ApiOrdinance?> GetDetailsAsync(int id) =>
+        api.GetAsync<ApiOrdinance>($"api/ordinances/{id}");
 
-    public void Add(Ordinance ordinance) => repo.Add(ordinance);
-
-    public void Update(Ordinance ordinance) => repo.Update(ordinance);
-
-    public void Delete(string ordinanceNumber)
+    public async Task<ApiOrdinance> AddAsync(OrdinanceInput input)
     {
-        var ordinance = repo.GetById(ordinanceNumber)
-            ?? throw new InvalidOperationException("Ordinance not found.");
-        repo.Delete(ordinance);
+        var ordinance = await SendAsync<ApiOrdinance>("api/ordinances", input)
+            ?? throw new InvalidOperationException("Unexpected empty response creating ordinance.");
+
+        if (input.InitialVersion is not null)
+        {
+            await api.PostAsync<object>($"api/ordinances/{ordinance.Id}/versions", input.InitialVersion);
+            var withVersion = await GetDetailsAsync(ordinance.Id);
+            if (withVersion is not null) return withVersion;
+        }
+
+        return ordinance;
     }
 
-    public void AddAmendment(string ordinanceId, OrdinanceVersion newVersion)
+    public Task UpdateAsync(int id, OrdinanceInput input) =>
+        SendAsync<object>($"api/ordinances/{id}?_method=PUT", input);
+
+    public Task DeleteAsync(int id) =>
+        api.DeleteAsync($"api/ordinances/{id}");
+
+    private async Task<T?> SendAsync<T>(string endpoint, OrdinanceInput input)
     {
-        var ordinance = repo.GetById(ordinanceId)
-            ?? throw new InvalidOperationException("Ordinance not found.");
+        using var content = new MultipartFormDataContent();
 
-        newVersion.VersionNumber = ordinance.Versions.Count + 1;
-        ordinance.Versions.Add(newVersion);
-        ordinance.Status = OrdinanceStatus.Amended;
+        content.Add(new StringContent(input.OrdinanceNumber), "ordinance_number");
+        if (input.SeriesNumber is not null) content.Add(new StringContent(input.SeriesNumber), "series_number");
+        content.Add(new StringContent(input.Title), "title");
+        if (input.Subject is not null) content.Add(new StringContent(input.Subject), "subject");
+        content.Add(new StringContent(input.Type), "type");
+        content.Add(new StringContent(input.Status), "status");
+        if (input.Sponsor is not null) content.Add(new StringContent(input.Sponsor), "sponsor");
+        if (input.Committee is not null) content.Add(new StringContent(input.Committee), "committee");
+        if (input.DatePassed.HasValue) content.Add(new StringContent(input.DatePassed.Value.ToString("yyyy-MM-dd")), "date_passed");
+        if (input.DateApproved.HasValue) content.Add(new StringContent(input.DateApproved.Value.ToString("yyyy-MM-dd")), "date_approved");
+        if (input.DatePublished.HasValue) content.Add(new StringContent(input.DatePublished.Value.ToString("yyyy-MM-dd")), "date_published");
+        if (input.ReferenceNumber is not null) content.Add(new StringContent(input.ReferenceNumber), "reference_number");
+        if (input.NrsNsb is not null) content.Add(new StringContent(input.NrsNsb), "nrs_nsb");
+        if (input.Nomenclature is not null) content.Add(new StringContent(input.Nomenclature), "nomenclature");
+        if (input.FinalAction is not null) content.Add(new StringContent(input.FinalAction), "final_action");
+        if (input.Location is not null) content.Add(new StringContent(input.Location), "location");
+        if (input.State is not null) content.Add(new StringContent(input.State), "state");
 
-        repo.Update(ordinance);
+        if (input.LocalDocumentPath is not null)
+        {
+            var bytes = await File.ReadAllBytesAsync(input.LocalDocumentPath);
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(GetContentType(input.LocalDocumentPath));
+            content.Add(fileContent, "document", Path.GetFileName(input.LocalDocumentPath));
+        }
+
+        return await api.PostMultipartAsync<T>(endpoint, content);
     }
 
-    public void UpdateStatus(string ordinanceId, OrdinanceStatus status)
+    private static string GetContentType(string filePath) => Path.GetExtension(filePath).ToLowerInvariant() switch
     {
-        var ordinance = repo.GetById(ordinanceId)
-            ?? throw new InvalidOperationException("Ordinance not found.");
-
-        ordinance.Status = status;
-        repo.Update(ordinance);
-    }
-
-    public IEnumerable<Ordinance> GetByYear(int year) =>
-        repo.GetAll().Where(o => o.DatePassed?.Year == year);
-
-    public IEnumerable<Ordinance> GetByStatus(OrdinanceStatus status) =>
-        repo.GetAll().Where(o => o.Status == status);
-
-    public IEnumerable<int> GetAvailableYears() =>
-        repo.GetAll()
-            .Where(o => o.DatePassed.HasValue)
-            .Select(o => o.DatePassed!.Value.Year)
-            .Distinct()
-            .OrderByDescending(y => y);
+        ".pdf"  => "application/pdf",
+        ".doc"  => "application/msword",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        _       => "application/octet-stream"
+    };
 }
