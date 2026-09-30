@@ -12,7 +12,8 @@ public partial class ShellWindow : Window
     public ShellWindow()
     {
         InitializeComponent();
-        _api = new ApiClient("https://dlis-web.onrender.com/"); // TODO: move to config/appsettings
+        AppConfig.Load();
+            _api = new ApiClient(AppConfig.ApiBaseUrl);
         ConnectionFailureHandler.ConnectionLost += OnConnectionLost;
         ConnectionFailureHandler.SessionExpired += OnConnectionLost;
         ShowLogin();

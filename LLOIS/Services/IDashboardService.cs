@@ -10,13 +10,23 @@ public class ApiDashboard
     public ApiDashboardOrdinances Ordinances { get; set; } = new();
     public ApiDashboardCount Resolutions { get; set; } = new();
     public ApiDashboardCount CommitteeReports { get; set; } = new();
+    public ApiDashboardCount Minutes { get; set; } = new();
+    public ApiDashboardUsers? Users { get; set; }               // null unless Admin+
     public List<ApiDashboardRecent> Recent { get; set; } = new();
+    public List<ApiDashboardActivity> RecentActivity { get; set; } = new();
+    public string ActivityScope { get; set; } = "own";          // "all" or "own"
 }
 
 public class ApiDashboardCount
 {
     public int Total { get; set; }
     public int ThisYear { get; set; }
+}
+
+public class ApiDashboardUsers
+{
+    public int Total { get; set; }
+    public int Active { get; set; }
 }
 
 public class ApiDashboardOrdinances : ApiDashboardCount
@@ -35,8 +45,18 @@ public class ApiDashboardOrdinances : ApiDashboardCount
 
 public class ApiDashboardRecent
 {
-    public string Type { get; set; } = string.Empty;     // ordinance | resolution | committee_report
+    public string Type { get; set; } = string.Empty;
     public string Number { get; set; } = string.Empty;
-    public string? Detail { get; set; }                  // status (ordinance) or subject (report)
+    public string? Detail { get; set; }
     public DateOnly Date { get; set; }
+}
+
+public class ApiDashboardActivity
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string? Details { get; set; }
+    public string? Source { get; set; }
+    public DateTime? CreatedAt { get; set; }
 }

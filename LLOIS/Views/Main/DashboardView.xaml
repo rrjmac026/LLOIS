@@ -15,14 +15,15 @@
         <!-- Clickable module card with hover lift -->
         <Style x:Key="ModuleCard" TargetType="Border">
             <Setter Property="CornerRadius"    Value="12"/>
-            <Setter Property="Padding"         Value="20,18"/>
+            <Setter Property="Padding"         Value="18,16"/>
+            <Setter Property="Margin"          Value="6,0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush"     Value="{DynamicResource StatCardBorderBrush}"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Background"      Value="{DynamicResource StatCardBgBrush}"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource BgHoverBrush}"/>
+                    <Setter Property="Background"  Value="{DynamicResource BgHoverBrush}"/>
                     <Setter Property="BorderBrush" Value="{DynamicResource BrandBrush}"/>
                 </Trigger>
             </Style.Triggers>
@@ -39,122 +40,141 @@
         <StackPanel Margin="28,24,28,28">
 
             <!-- ── Greeting ──────────────────────────────────────── -->
-             <Border Style="{StaticResource StatCard}" Margin="0,0,0,20">
+            <Border Style="{StaticResource StatCard}" Margin="0,0,0,20">
                 <StackPanel>
                     <TextBlock x:Name="GreetingLabel"
-                            Text="Good morning, admin"
-                            FontSize="20" FontWeight="Bold"
-                            Foreground="{DynamicResource TextPrimaryBrush}"/>
+                               Text="Good morning, admin"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
                     <TextBlock Text="Here's what's happening in the system today."
-                            FontSize="13"
-                            Foreground="{DynamicResource TextSecondaryBrush}"
-                            Margin="0,4,0,0"/>
+                               FontSize="13"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,4,0,0"/>
                 </StackPanel>
             </Border>
 
             <TextBlock Text="OVERVIEW"
-           FontSize="11" FontWeight="SemiBold"
-           Foreground="{DynamicResource TextTertiaryBrush}"
-           Margin="0,0,0,10"/>
+                       FontSize="11" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextTertiaryBrush}"
+                       Margin="0,0,0,10"/>
 
-            <UniformGrid Rows="1" Columns="3" Margin="0,0,0,20">
+            <!-- Cards share the row equally; the Users card is collapsed for non-admins -->
+            <UniformGrid x:Name="ModuleGrid" Rows="1" Margin="-6,0,-6,20">
 
                 <!-- Ordinances -->
-                <Border Style="{StaticResource ModuleCard}" Margin="0,0,7,0"
+                <Border Style="{StaticResource ModuleCard}"
                         MouseLeftButtonUp="OrdinancesCard_Click">
                     <StackPanel>
                         <DockPanel>
-                            <Border Style="{StaticResource ModuleIconBadge}"
-                                    Background="#1A6C63FF">
+                            <Border Style="{StaticResource ModuleIconBadge}" Background="#1A6C63FF">
                                 <TextBlock Text="📜" FontSize="17"
-                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock DockPanel.Dock="Right"
-                                    Text="→" FontSize="16"
-                                    Foreground="{DynamicResource TextTertiaryBrush}"
-                                    VerticalAlignment="Top" HorizontalAlignment="Right"/>
+                            <TextBlock DockPanel.Dock="Right" Text="→" FontSize="16"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       VerticalAlignment="Top" HorizontalAlignment="Right"/>
                         </DockPanel>
-                        <TextBlock x:Name="OrdinanceCount"
-                                Text="—" FontSize="32" FontWeight="Bold"
-                                Foreground="{DynamicResource TextPrimaryBrush}"
-                                Margin="0,12,0,0"/>
-                        <TextBlock Text="Ordinances"
-                                FontSize="12" FontWeight="SemiBold"
-                                Foreground="{DynamicResource TextSecondaryBrush}"
-                                Margin="0,2,0,0"/>
-                        <TextBlock x:Name="OrdinanceSub"
-                                Text="—"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextTertiaryBrush}"
-                                Margin="0,4,0,0"/>
+                        <TextBlock x:Name="OrdinanceCount" Text="—" FontSize="30" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                        <TextBlock Text="Ordinances" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="OrdinanceSub" Text="—" FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Resolutions -->
-                <Border Style="{StaticResource ModuleCard}" Margin="7,0,7,0"
+                <Border Style="{StaticResource ModuleCard}"
                         MouseLeftButtonUp="ResolutionsCard_Click">
                     <StackPanel>
                         <DockPanel>
-                            <Border Style="{StaticResource ModuleIconBadge}"
-                                    Background="#1A2E9E5A">
+                            <Border Style="{StaticResource ModuleIconBadge}" Background="#1A2E9E5A">
                                 <TextBlock Text="🗳" FontSize="17"
-                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock DockPanel.Dock="Right"
-                                    Text="→" FontSize="16"
-                                    Foreground="{DynamicResource TextTertiaryBrush}"
-                                    VerticalAlignment="Top" HorizontalAlignment="Right"/>
+                            <TextBlock DockPanel.Dock="Right" Text="→" FontSize="16"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       VerticalAlignment="Top" HorizontalAlignment="Right"/>
                         </DockPanel>
-                        <TextBlock x:Name="ResolutionCount"
-                                Text="—" FontSize="32" FontWeight="Bold"
-                                Foreground="{DynamicResource TextPrimaryBrush}"
-                                Margin="0,12,0,0"/>
-                        <TextBlock Text="Resolutions"
-                                FontSize="12" FontWeight="SemiBold"
-                                Foreground="{DynamicResource TextSecondaryBrush}"
-                                Margin="0,2,0,0"/>
-                        <TextBlock x:Name="ResolutionSub"
-                                Text="—"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextTertiaryBrush}"
-                                Margin="0,4,0,0"/>
+                        <TextBlock x:Name="ResolutionCount" Text="—" FontSize="30" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                        <TextBlock Text="Resolutions" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="ResolutionSub" Text="—" FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Committee Reports -->
-                <Border Style="{StaticResource ModuleCard}" Margin="7,0,0,0"
+                <Border Style="{StaticResource ModuleCard}"
                         MouseLeftButtonUp="CommitteeReportsCard_Click">
                     <StackPanel>
                         <DockPanel>
-                            <Border Style="{StaticResource ModuleIconBadge}"
-                                    Background="#1AE0A030">
+                            <Border Style="{StaticResource ModuleIconBadge}" Background="#1AE0A030">
                                 <TextBlock Text="🗂" FontSize="17"
-                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock DockPanel.Dock="Right"
-                                    Text="→" FontSize="16"
-                                    Foreground="{DynamicResource TextTertiaryBrush}"
-                                    VerticalAlignment="Top" HorizontalAlignment="Right"/>
+                            <TextBlock DockPanel.Dock="Right" Text="→" FontSize="16"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       VerticalAlignment="Top" HorizontalAlignment="Right"/>
                         </DockPanel>
-                        <TextBlock x:Name="ReportCount"
-                                Text="—" FontSize="32" FontWeight="Bold"
-                                Foreground="{DynamicResource TextPrimaryBrush}"
-                                Margin="0,12,0,0"/>
-                        <TextBlock Text="Committee Reports"
-                                FontSize="12" FontWeight="SemiBold"
-                                Foreground="{DynamicResource TextSecondaryBrush}"
-                                Margin="0,2,0,0"/>
-                        <TextBlock x:Name="ReportSub"
-                                Text="—"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextTertiaryBrush}"
-                                Margin="0,4,0,0"/>
+                        <TextBlock x:Name="ReportCount" Text="—" FontSize="30" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                        <TextBlock Text="Committee Reports" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="ReportSub" Text="—" FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Minutes -->
+                <Border Style="{StaticResource ModuleCard}"
+                        MouseLeftButtonUp="MinutesCard_Click">
+                    <StackPanel>
+                        <DockPanel>
+                            <Border Style="{StaticResource ModuleIconBadge}" Background="#1A3B9EE0">
+                                <TextBlock Text="📝" FontSize="17"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock DockPanel.Dock="Right" Text="→" FontSize="16"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       VerticalAlignment="Top" HorizontalAlignment="Right"/>
+                        </DockPanel>
+                        <TextBlock x:Name="MinutesCount" Text="—" FontSize="30" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                        <TextBlock Text="Minutes" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="MinutesSub" Text="—" FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Users (Admin and above only) -->
+                <Border x:Name="UsersCard" Style="{StaticResource ModuleCard}"
+                        Visibility="Collapsed"
+                        MouseLeftButtonUp="UsersCard_Click">
+                    <StackPanel>
+                        <DockPanel>
+                            <Border Style="{StaticResource ModuleIconBadge}" Background="#1AE05A7A">
+                                <TextBlock Text="👥" FontSize="17"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock DockPanel.Dock="Right" Text="→" FontSize="16"
+                                       Foreground="{DynamicResource TextTertiaryBrush}"
+                                       VerticalAlignment="Top" HorizontalAlignment="Right"/>
+                        </DockPanel>
+                        <TextBlock x:Name="UsersCount" Text="—" FontSize="30" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,12,0,0"/>
+                        <TextBlock Text="Users" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="UsersSub" Text="—" FontSize="11"
+                                   Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
             </UniformGrid>
 
-            <!-- ── Bottom row: By status + Recent actions ────────── -->
+            <!-- ── Bottom row: By status + Recent activity ───────── -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -165,99 +185,82 @@
                 <!-- By status card -->
                 <Border Grid.Column="0" Style="{StaticResource StatCard}">
                     <StackPanel>
-                        <TextBlock Text="By status"
+                        <TextBlock Text="Ordinances by status"
                                    FontSize="13" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="0,0,0,14"/>
 
-                        <!-- In Effect row -->
+                        <!-- In Effect -->
                         <DockPanel Margin="0,0,0,10">
                             <TextBlock DockPanel.Dock="Left" Text="In effect"
                                        FontSize="12" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Width="90"/>
-                            <TextBlock x:Name="StatusInEffectNum"
-                                       DockPanel.Dock="Right" Text="—"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Width="90"/>
+                            <TextBlock x:Name="StatusInEffectNum" DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="30"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Right"/>
-                            <Border x:Name="StatusInEffectPill"
-                                    DockPanel.Dock="Right"
+                            <Border DockPanel.Dock="Right"
                                     Background="{DynamicResource StatusInEffectBgBrush}"
                                     CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
                                     VerticalAlignment="Center">
-                                <TextBlock x:Name="StatusInEffectPct"
-                                           Text="—"
+                                <TextBlock x:Name="StatusInEffectPct" Text="—"
                                            FontSize="10" FontWeight="Bold"
                                            Foreground="{DynamicResource StatusInEffectFgBrush}"/>
                             </Border>
                         </DockPanel>
 
-                        <!-- Amended row -->
+                        <!-- Amended -->
                         <DockPanel Margin="0,0,0,10">
                             <TextBlock DockPanel.Dock="Left" Text="Amended"
                                        FontSize="12" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Width="90"/>
-                            <TextBlock x:Name="StatusAmendedNum"
-                                       DockPanel.Dock="Right" Text="—"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Width="90"/>
+                            <TextBlock x:Name="StatusAmendedNum" DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="30"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Right"/>
-                            <Border Background="{DynamicResource StatusAmendedBgBrush}"
-                                    DockPanel.Dock="Right"
+                            <Border DockPanel.Dock="Right"
+                                    Background="{DynamicResource StatusAmendedBgBrush}"
                                     CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
                                     VerticalAlignment="Center">
-                                <TextBlock x:Name="StatusAmendedPct"
-                                           Text="—"
+                                <TextBlock x:Name="StatusAmendedPct" Text="—"
                                            FontSize="10" FontWeight="Bold"
                                            Foreground="{DynamicResource StatusAmendedFgBrush}"/>
                             </Border>
                         </DockPanel>
 
-                        <!-- Repealed row -->
+                        <!-- Repealed -->
                         <DockPanel Margin="0,0,0,10">
                             <TextBlock DockPanel.Dock="Left" Text="Repealed"
                                        FontSize="12" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Width="90"/>
-                            <TextBlock x:Name="StatusRepealedNum"
-                                       DockPanel.Dock="Right" Text="—"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Width="90"/>
+                            <TextBlock x:Name="StatusRepealedNum" DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="30"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Right"/>
-                            <Border Background="{DynamicResource StatusRepealedBgBrush}"
-                                    DockPanel.Dock="Right"
+                            <Border DockPanel.Dock="Right"
+                                    Background="{DynamicResource StatusRepealedBgBrush}"
                                     CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
                                     VerticalAlignment="Center">
-                                <TextBlock x:Name="StatusRepealedPct"
-                                           Text="—"
+                                <TextBlock x:Name="StatusRepealedPct" Text="—"
                                            FontSize="10" FontWeight="Bold"
                                            Foreground="{DynamicResource StatusRepealedFgBrush}"/>
                             </Border>
                         </DockPanel>
 
-                        <!-- Under Review row -->
+                        <!-- Under Review -->
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Text="Under review"
                                        FontSize="12" VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Width="90"/>
-                            <TextBlock x:Name="StatusReviewNum"
-                                       DockPanel.Dock="Right" Text="—"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Width="30"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Width="90"/>
+                            <TextBlock x:Name="StatusReviewNum" DockPanel.Dock="Right" Text="—"
+                                       FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="30"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Right"/>
-                            <Border Background="{DynamicResource StatusReviewBgBrush}"
-                                    DockPanel.Dock="Right"
+                            <Border DockPanel.Dock="Right"
+                                    Background="{DynamicResource StatusReviewBgBrush}"
                                     CornerRadius="8" Padding="7,2" Margin="0,0,6,0"
                                     VerticalAlignment="Center">
-                                <TextBlock x:Name="StatusReviewPct"
-                                           Text="—"
+                                <TextBlock x:Name="StatusReviewPct" Text="—"
                                            FontSize="10" FontWeight="Bold"
                                            Foreground="{DynamicResource StatusReviewFgBrush}"/>
                             </Border>
@@ -266,21 +269,28 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Recent actions card -->
+                <!-- Recent activity card -->
                 <Border Grid.Column="2" Style="{StaticResource StatCard}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top"
-                                   Text="Recent actions"
+                        <TextBlock x:Name="RecentTitle" DockPanel.Dock="Top"
+                                   Text="Recent activity"
                                    FontSize="13" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="0,0,0,14"/>
+
+                        <TextBlock x:Name="EmptyActivityLabel" DockPanel.Dock="Top"
+                                   Text="No activity recorded yet."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource TextTertiaryBrush}"
+                                   Visibility="Collapsed"/>
+
                         <ItemsControl x:Name="RecentActionsList">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <DockPanel Margin="0,0,0,10" LastChildFill="False">
+                                    <DockPanel Margin="0,0,0,10" LastChildFill="True">
                                         <TextBlock DockPanel.Dock="Right"
                                                    Text="{Binding TimeAgo}"
-                                                   FontSize="10"
+                                                   FontSize="10" Margin="10,0,0,0"
                                                    Foreground="{DynamicResource TextTertiaryBrush}"
                                                    VerticalAlignment="Center"/>
                                         <TextBlock Text="{Binding Description}"

@@ -54,7 +54,7 @@ public partial class MainView : UserControl
 
     public void PreloadData()
     {
-        if (IsLoaded) ShowCommitteeReports();
+        if (IsLoaded) ShowDashboard();
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -63,7 +63,7 @@ public partial class MainView : UserControl
         StartUpdateChecks();     // MainView.Updates.cs
 
         SyncTheme(ThemeService.IsDark);
-        ShowCommitteeReports();
+        ShowDashboard();
 
         ShowUpdateCompleteNotice();   // MainView.Updates.cs
     }
@@ -81,6 +81,8 @@ public partial class MainView : UserControl
             _dashboardView.NavigateToOrdinances       += ShowOrdinances;
             _dashboardView.NavigateToResolutions      += ShowResolutions;
             _dashboardView.NavigateToCommitteeReports += ShowCommitteeReports;
+            _dashboardView.NavigateToMinutes          += ShowMinutes;
+            _dashboardView.NavigateToUsers            += ShowUsers;
         }
 
         _dashboardView.Refresh();
